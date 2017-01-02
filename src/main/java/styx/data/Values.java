@@ -6,7 +6,7 @@ import java.util.Map;
 
 import styx.data.impl.AbstractNumeric;
 import styx.data.impl.ByteArrayBinary;
-import styx.data.impl.ConcreteReference;
+import styx.data.impl.LinkedListReference;
 import styx.data.impl.StringText;
 
 public class Values {
@@ -36,7 +36,7 @@ public class Values {
     }
 
     public static Reference root() {
-        return ConcreteReference.ROOT;
+        return LinkedListReference.ROOT;
     }
 
     public static Reference reference(Value... parts) {

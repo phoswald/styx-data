@@ -6,21 +6,21 @@ import java.util.Optional;
 import styx.data.Reference;
 import styx.data.Value;
 
-public class ConcreteReference implements Reference {
+public class LinkedListReference implements Reference {
 
-    public static final ConcreteReference ROOT = new ConcreteReference();
+    public static final LinkedListReference ROOT = new LinkedListReference();
 
-    private final ConcreteReference parent;
+    private final LinkedListReference parent;
     private final int partCount;
     private final Value lastPart;
 
-    private ConcreteReference() {
+    private LinkedListReference() {
         this.parent = null;
         this.partCount = 0;
         this.lastPart = null;
     }
 
-    private ConcreteReference(ConcreteReference parent, Value lastPart) {
+    private LinkedListReference(LinkedListReference parent, Value lastPart) {
         this.parent = Objects.requireNonNull(parent);
         this.partCount = parent.partCount + 1;
         this.lastPart = Objects.requireNonNull(lastPart);
@@ -41,7 +41,7 @@ public class ConcreteReference implements Reference {
         if(index < 0 || index >= partCount) {
             throw new IndexOutOfBoundsException();
         }
-        ConcreteReference current = this;
+        LinkedListReference current = this;
         while(index + 1 < current.partCount) {
             current = current.parent;
         }
@@ -55,6 +55,6 @@ public class ConcreteReference implements Reference {
 
     @Override
     public Reference child(Value value) {
-        return new ConcreteReference(this, value);
+        return new LinkedListReference(this, value);
     }
 }
