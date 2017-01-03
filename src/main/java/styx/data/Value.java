@@ -5,19 +5,43 @@ package styx.data;
  */
 public interface Value extends Comparable<Value> {
 
+    public default boolean isNumeric() {
+        return this instanceof Numeric;
+    }
+
     public default Numeric asNumeric() {
-        throw new ClassCastException();
+        return (Numeric) this;
+    }
+
+    public default boolean isText() {
+        return this instanceof Text;
     }
 
     public default Text asText() {
-        throw new ClassCastException();
+        return (Text) this;
+    }
+
+    public default boolean isBinary() {
+        return this instanceof Binary;
     }
 
     public default Binary asBinary() {
-        throw new ClassCastException();
+        return (Binary) this;
+    }
+
+    public default boolean isReference() {
+        return this instanceof Reference;
     }
 
     public default Reference asReference() {
-        throw new ClassCastException();
+        return (Reference) this;
+    }
+
+    public default boolean isComplex() {
+        return this instanceof Complex;
+    }
+
+    public default Complex asComplex() {
+        return (Complex) this;
     }
 }

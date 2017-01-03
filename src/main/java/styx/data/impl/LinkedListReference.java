@@ -6,7 +6,7 @@ import java.util.Optional;
 import styx.data.Reference;
 import styx.data.Value;
 
-public class LinkedListReference implements Reference {
+public class LinkedListReference extends AbstractValue implements Reference {
 
     public static final LinkedListReference ROOT = new LinkedListReference();
 
@@ -27,8 +27,28 @@ public class LinkedListReference implements Reference {
     }
 
     @Override
-    public int compareTo(Value o) {
-        throw new UnsupportedOperationException();
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append('[');
+        for(int index = 0; index < partCount; index++) {
+            if(index > 0) {
+                sb.append(',');
+            }
+            sb.append(partAt(index).toString());
+        }
+        sb.append(']');
+        return sb.toString();
+    }
+
+    @Override
+    public int compareTo(Value other) {
+        if(other.isReference()) {
+            return compare(this, other.asReference());
+        } else if(other.isComplex()) {
+            return -1; // reference sorts before complex.
+        } else {
+            return 1; // reference sorts after all other values exception complex.
+        }
     }
 
     @Override
@@ -56,5 +76,16 @@ public class LinkedListReference implements Reference {
     @Override
     public Reference child(Value value) {
         return new LinkedListReference(this, value);
+    }
+
+    private static int compare(Reference a, Reference b) {
+        int commonByteCount = Math.min(a.partCount(), b.partCount());
+        for(int index = 0; index < commonByteCount; index++) {
+            int order = a.partAt(index).compareTo(b.partAt(index));
+            if(order != 0) {
+                return order;
+            }
+        }
+        return Integer.compare(a.partCount(), b.partCount());
     }
 }

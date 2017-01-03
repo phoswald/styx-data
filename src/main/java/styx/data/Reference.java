@@ -1,17 +1,13 @@
 package styx.data;
 
-import java.util.List;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Optional;
 
 /**
  * An immutable reference, consisting of a sequence of parts.
  */
 public interface Reference extends Value {
-
-    @Override
-    public default Reference asReference() {
-        return this;
-    }
 
     /**
      * Returns the number of parts of this reference.
@@ -44,17 +40,11 @@ public interface Reference extends Value {
      */
     public Reference child(Value value);
 
-    public default Reference child(Value... values) {
-        Reference current = this;
-        if(values != null) {
-            for(Value value : values) {
-                current = current.child(value);
-            }
-        }
-        return current;
+    public default Reference descendant(Value... values) {
+        return descendant(values == null ? null : Arrays.asList(values));
     }
 
-    public default Reference child(List<? extends Value> values) {
+    public default Reference descendant(Collection<? extends Value> values) {
         Reference current = this;
         if(values != null) {
             for(Value value : values) {

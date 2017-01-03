@@ -9,6 +9,11 @@ class LongNumeric extends AbstractNumeric {
     }
 
     @Override
+    public String toString() {
+        return Long.toString(value);
+    }
+
+    @Override
     public long toLong() {
         return value;
     }

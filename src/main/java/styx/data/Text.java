@@ -5,11 +5,6 @@ package styx.data;
  */
 public interface Text extends Value {
 
-    @Override
-    public default Text asText() {
-        return this;
-    }
-
     /**
      * Returns the number of characters of this value.
      *

@@ -5,11 +5,6 @@ package styx.data;
  */
 public interface Numeric extends Value {
 
-    @Override
-    public default Numeric asNumeric() {
-        return this;
-    }
-
     /**
      * Converts the number to a 32-bit signed integer value.
      *

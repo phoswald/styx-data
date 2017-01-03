@@ -5,11 +5,6 @@ package styx.data;
  */
 public interface Binary extends Value {
 
-    @Override
-    public default Binary asBinary() {
-        return this;
-    }
-
     /**
      * Returns the number of bytes of this value.
      *

@@ -9,6 +9,11 @@ class IntegerNumeric extends AbstractNumeric {
     }
 
     @Override
+    public String toString() {
+        return Integer.toString(value);
+    }
+
+    @Override
     public int toInteger() {
         return value;
     }

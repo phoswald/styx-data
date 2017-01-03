@@ -9,6 +9,11 @@ class DoubleNumeric extends AbstractNumeric {
     }
 
     @Override
+    public String toString() {
+        return Double.toString(value);
+    }
+
+    @Override
     public double toDouble() {
         return value;
     }

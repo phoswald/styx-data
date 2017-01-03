@@ -5,7 +5,7 @@ import java.util.Objects;
 import styx.data.Text;
 import styx.data.Value;
 
-public class StringText implements Text {
+public class StringText extends AbstractValue implements Text {
 
     private static final StringText EMPTY = new StringText("");
 
@@ -24,8 +24,32 @@ public class StringText implements Text {
     }
 
     @Override
-    public int compareTo(Value o) {
-        throw new UnsupportedOperationException();
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append('"');
+        for(int index = 0; index < value.length(); index++) {
+            char character = value.charAt(index);
+            switch(character) {
+                case '\t': sb.append("\\t"); break;
+                case '\r': sb.append("\\r"); break;
+                case '\n': sb.append("\\n"); break;
+                case '"':  sb.append("\\\""); break;
+                default:   sb.append(character); break;
+            }
+        }
+        sb.append('"');
+        return sb.toString();
+    }
+
+    @Override
+    public int compareTo(Value other) {
+        if(other.isText()) {
+            return toCharString().compareTo(other.asText().toCharString());
+        } else if(other.isNumeric()) {
+            return 1; // text sorts after number
+        } else {
+            return -1; // text sorts before all other values except number
+        }
     }
 
     @Override

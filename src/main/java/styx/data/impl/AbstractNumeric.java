@@ -3,7 +3,7 @@ package styx.data.impl;
 import styx.data.Numeric;
 import styx.data.Value;
 
-public abstract class AbstractNumeric implements Numeric {
+public abstract class AbstractNumeric extends AbstractValue implements Numeric {
 
     public static Numeric valueOf(long value) {
         if(value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE) {
@@ -23,8 +23,12 @@ public abstract class AbstractNumeric implements Numeric {
     }
 
     @Override
-    public int compareTo(Value o) {
-        throw new UnsupportedOperationException();
+    public int compareTo(Value other) {
+        if(other.isNumeric()) {
+            return Double.compare(toDouble(), other.asNumeric().toDouble());
+        } else {
+            return -1; // number sorts before all other values
+        }
     }
 
     @Override
