@@ -9,11 +9,6 @@ class LongNumeric extends AbstractNumeric {
     }
 
     @Override
-    public String toString() {
-        return Long.toString(value);
-    }
-
-    @Override
     public long toLong() {
         return value;
     }
@@ -21,5 +16,10 @@ class LongNumeric extends AbstractNumeric {
     @Override
     public double toDouble() {
         return value;
+    }
+
+    @Override
+    public String toDecimalString() {
+        return Long.toString(value);
     }
 }

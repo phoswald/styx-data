@@ -85,24 +85,6 @@ public class BinaryTreeComplex extends AbstractValue implements Complex, Pair {
     }
 
     @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append('{');
-        boolean first = true;
-        for(Pair pair : this) {
-            if(!first) {
-                sb.append(',');
-            }
-            first = false;
-            sb.append(pair.key().toString());
-            sb.append(':');
-            sb.append(pair.value().toString());
-        }
-        sb.append('}');
-        return sb.toString();
-    }
-
-    @Override
     public int compareTo(Value other) {
         if(other.isComplex()) {
             return compare(this, other.asComplex());

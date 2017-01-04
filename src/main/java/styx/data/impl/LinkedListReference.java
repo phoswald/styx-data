@@ -35,20 +35,6 @@ public class LinkedListReference extends AbstractValue implements Reference {
     }
 
     @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append('[');
-        for(int index = 0; index < partCount; index++) {
-            if(index > 0) {
-                sb.append(',');
-            }
-            sb.append(partAt(index).toString());
-        }
-        sb.append(']');
-        return sb.toString();
-    }
-
-    @Override
     public int compareTo(Value other) {
         if(other.isReference()) {
             return compare(this, other.asReference());

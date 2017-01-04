@@ -9,11 +9,6 @@ class IntegerNumeric extends AbstractNumeric {
     }
 
     @Override
-    public String toString() {
-        return Integer.toString(value);
-    }
-
-    @Override
     public int toInteger() {
         return value;
     }
@@ -26,5 +21,10 @@ class IntegerNumeric extends AbstractNumeric {
     @Override
     public double toDouble() {
         return value;
+    }
+
+    @Override
+    public String toDecimalString() {
+        return Integer.toString(value);
     }
 }

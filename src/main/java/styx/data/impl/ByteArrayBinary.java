@@ -26,18 +26,6 @@ public class ByteArrayBinary extends AbstractValue implements Binary {
     }
 
     @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("0x");
-        for(byte signedByte : value) {
-            int unsignedByte = signedByte & 0xFF;
-            sb.append(Character.toUpperCase(Character.forDigit(unsignedByte / 16, 16)));
-            sb.append(Character.toUpperCase(Character.forDigit(unsignedByte % 16, 16)));
-        }
-        return sb.toString();
-    }
-
-    @Override
     public int compareTo(Value other) {
         if(other.isBinary()) {
             return compare(this, other.asBinary());

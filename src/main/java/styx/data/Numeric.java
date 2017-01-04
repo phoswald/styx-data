@@ -28,4 +28,11 @@ public interface Numeric extends Value {
      * @throws ArithmeticException if the number cannot be represented exactly by a double.
      */
     public double toDouble();
+
+    /**
+     * Converts the number to a decimal string representation.
+     *
+     * @return the exact decimal string representation.
+     */
+    public String toDecimalString();
 }

@@ -5,11 +5,10 @@ import styx.data.Value;
 
 abstract class AbstractValue implements Value {
 
-    /**
-     * Subclasses must provide a value-based implementation consistent with equals() and hashCode()
-     */
     @Override
-    public abstract String toString();
+    public String toString() {
+        return new Serializer().serialize(this);
+    }
 
     @Override
     public boolean equals(Object other) {
