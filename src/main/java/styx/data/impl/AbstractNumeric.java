@@ -1,5 +1,6 @@
 package styx.data.impl;
 
+import styx.data.Kind;
 import styx.data.Numeric;
 import styx.data.Value;
 
@@ -27,8 +28,13 @@ public abstract class AbstractNumeric extends AbstractValue implements Numeric {
         if(other.isNumeric()) {
             return Double.compare(toDouble(), other.asNumeric().toDouble());
         } else {
-            return -1; // number sorts before all other values
+            return compare(kind(), other.kind());
         }
+    }
+
+    @Override
+    public Kind kind() {
+        return Kind.NUMBER;
     }
 
     @Override

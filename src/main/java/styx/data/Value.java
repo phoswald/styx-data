@@ -5,6 +5,8 @@ package styx.data;
  */
 public interface Value extends Comparable<Value> {
 
+    public Kind kind();
+
     public default boolean isNumeric() {
         return this instanceof Numeric;
     }

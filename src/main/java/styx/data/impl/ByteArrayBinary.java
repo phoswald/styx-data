@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Objects;
 
 import styx.data.Binary;
+import styx.data.Kind;
 import styx.data.Value;
 
 public class ByteArrayBinary extends AbstractValue implements Binary {
@@ -40,11 +41,14 @@ public class ByteArrayBinary extends AbstractValue implements Binary {
     public int compareTo(Value other) {
         if(other.isBinary()) {
             return compare(this, other.asBinary());
-        } else if(other.isNumeric() || other.isText()) {
-            return 1; // binary sorts after number and text
         } else {
-            return -1; // binary sorts before all other values except number and text
+            return compare(kind(), other.kind());
         }
+    }
+
+    @Override
+    public Kind kind() {
+        return Kind.BINARY;
     }
 
     @Override

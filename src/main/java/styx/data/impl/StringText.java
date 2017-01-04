@@ -2,6 +2,7 @@ package styx.data.impl;
 
 import java.util.Objects;
 
+import styx.data.Kind;
 import styx.data.Text;
 import styx.data.Value;
 
@@ -45,11 +46,14 @@ public class StringText extends AbstractValue implements Text {
     public int compareTo(Value other) {
         if(other.isText()) {
             return toCharString().compareTo(other.asText().toCharString());
-        } else if(other.isNumeric()) {
-            return 1; // text sorts after number
         } else {
-            return -1; // text sorts before all other values except number
+            return compare(kind(), other.kind());
         }
+    }
+
+    @Override
+    public Kind kind() {
+        return Kind.TEXT;
     }
 
     @Override

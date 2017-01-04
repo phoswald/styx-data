@@ -1,5 +1,6 @@
 package styx.data.impl;
 
+import styx.data.Kind;
 import styx.data.Value;
 
 abstract class AbstractValue implements Value {
@@ -22,5 +23,9 @@ abstract class AbstractValue implements Value {
     @Override
     public int hashCode() {
         return toString().hashCode();
+    }
+
+    protected static int compare(Kind a, Kind b) {
+        return Integer.compare(a.ordinal(), b.ordinal());
     }
 }

@@ -3,6 +3,7 @@ package styx.data.impl;
 import java.util.Objects;
 import java.util.Optional;
 
+import styx.data.Kind;
 import styx.data.Reference;
 import styx.data.Value;
 
@@ -51,11 +52,14 @@ public class LinkedListReference extends AbstractValue implements Reference {
     public int compareTo(Value other) {
         if(other.isReference()) {
             return compare(this, other.asReference());
-        } else if(other.isComplex()) {
-            return -1; // reference sorts before complex.
         } else {
-            return 1; // reference sorts after all other values exception complex.
+            return compare(kind(), other.kind());
         }
+    }
+
+    @Override
+    public Kind kind() {
+        return Kind.REFERENCE;
     }
 
     @Override

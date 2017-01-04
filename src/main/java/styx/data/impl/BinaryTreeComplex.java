@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import styx.data.Complex;
+import styx.data.Kind;
 import styx.data.Pair;
 import styx.data.Value;
 
@@ -106,8 +107,13 @@ public class BinaryTreeComplex extends AbstractValue implements Complex, Pair {
         if(other.isComplex()) {
             return compare(this, other.asComplex());
         } else {
-            return 1; // complex sorts after all all other values.
+            return compare(kind(), other.kind());
         }
+    }
+
+    @Override
+    public Kind kind() {
+        return Kind.COMPLEX;
     }
 
     @Override
