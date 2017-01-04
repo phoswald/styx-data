@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import static styx.data.AssertUtils.assertEqualPairs;
 import static styx.data.AssertUtils.assertException;
 import static styx.data.Values.complex;
@@ -17,8 +18,10 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -194,6 +197,39 @@ public class ComplexTest {
     public void list_invalid_exception() {
         assertException(IllegalArgumentException.class, () -> list((Value) null));
         assertException(IllegalArgumentException.class, () -> list(Arrays.asList((Value) null)));
+    }
+
+    @Test
+    public void iterator_valid_success() {
+        Iterator<Pair> it = list(number(1), number(2), number(3)).iterator();
+        assertTrue(it.hasNext());
+        assertEquals(number(1), it.next().value());
+        assertTrue(it.hasNext());
+        assertTrue(it.hasNext());
+        assertEquals(number(2), it.next().value());
+        assertEquals(number(3), it.next().value());
+        assertFalse(it.hasNext());
+        assertFalse(it.hasNext());
+        assertException(NoSuchElementException.class, it::next);
+    }
+
+    @Test
+    public void iterator_empty_success() {
+        Iterator<Pair> it = empty().iterator();
+        assertFalse(it.hasNext());
+        assertException(NoSuchElementException.class, it::next);
+    }
+
+    @Test
+    public void iterator_forEach_success() {
+        Complex value = list(IntStream.rangeClosed(1, 1000).mapToObj(i -> number(i)).collect(Collectors.toList()));
+        int expected = 1;
+        for(Pair pair : value) {
+            assertEquals(number(expected), pair.key());
+            assertEquals(number(expected), pair.value());
+            expected++;
+        }
+        assertEquals(1001, expected);
     }
 
     @Test

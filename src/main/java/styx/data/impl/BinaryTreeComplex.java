@@ -2,9 +2,8 @@ package styx.data.impl;
 
 import static styx.data.Values.pair;
 
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -79,11 +78,7 @@ public class BinaryTreeComplex extends AbstractValue implements Complex {
 
     @Override
     public Iterator<Pair> iterator() {
-        List<Pair> list = new ArrayList<>();
-        if(!isEmpty()) {
-            iterate(this, list);
-        }
-        return list.iterator(); // TODO (optimize): return iterator for tree, not iterator for copied list.
+        return new TreeIterator(this);
     }
 
     @Override
@@ -108,17 +103,6 @@ public class BinaryTreeComplex extends AbstractValue implements Complex {
             return 1;
         } else {
             throw new UnsupportedOperationException();
-        }
-    }
-
-    private static void iterate(BinaryTreeComplex node, List<Pair> list) {
-        Objects.requireNonNull(node.pair); // must not be called for empty nodes
-        if(!node.left.isEmpty()) {
-            iterate(node.left, list);
-        }
-        list.add(node.pair);
-        if(!node.right.isEmpty()) {
-            iterate(node.right, list);
         }
     }
 
@@ -232,5 +216,44 @@ public class BinaryTreeComplex extends AbstractValue implements Complex {
             }
         }
         return Boolean.compare(iteratorA.hasNext(), iteratorB.hasNext());
+    }
+
+    private static class TreeIterator implements Iterator<Pair> {
+
+        private final BinaryTreeComplex[] path;
+        private int pos;
+
+        private TreeIterator(BinaryTreeComplex tree) {
+            path = new BinaryTreeComplex[tree.height];
+            pos = -1;
+            walkLeft(tree);
+        }
+
+        @Override
+        public boolean hasNext() {
+            return pos >= 0;
+        }
+
+        @Override
+        public Pair next() {
+            if(!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            BinaryTreeComplex node = path[pos];
+            if(!node.right.isEmpty()) {
+                pos--;
+                walkLeft(node.right);
+            } else {
+                pos--;
+            }
+            return Objects.requireNonNull(node.pair);
+        }
+
+        private void walkLeft(BinaryTreeComplex node) {
+            while(!node.isEmpty()) {
+                path[++pos] = node;
+                node = node.left;
+            }
+        }
     }
 }
