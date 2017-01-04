@@ -7,7 +7,7 @@ import styx.data.Value;
 
 public class StringText extends AbstractValue implements Text {
 
-    private static final StringText EMPTY = new StringText("");
+    private static final Text EMPTY = new StringText("");
 
     private final String value;
 

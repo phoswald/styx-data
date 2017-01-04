@@ -6,9 +6,16 @@ import java.util.Optional;
 import styx.data.Reference;
 import styx.data.Value;
 
+/**
+ * An implementation of a reference value as an immutable, singly linked list.
+ * <p>
+ * Users never create instances directly. Instead, references can be constructed by starting with the
+ * empty node (which is exposed by the public static field ROOT) and using the child() method to add parts.
+ */
 public class LinkedListReference extends AbstractValue implements Reference {
 
-    public static final LinkedListReference ROOT = new LinkedListReference();
+    /** the starting point for working with reference values */
+    public static final Reference ROOT = new LinkedListReference();
 
     private final LinkedListReference parent;
     private final int partCount;

@@ -10,7 +10,7 @@ public class ByteArrayBinary extends AbstractValue implements Binary {
 
     private final byte[] value;
 
-    private static final ByteArrayBinary EMPTY = new ByteArrayBinary(new byte[0]);
+    private static final Binary EMPTY = new ByteArrayBinary(new byte[0]);
 
     private ByteArrayBinary(byte[] value) {
         this.value = Objects.requireNonNull(value);

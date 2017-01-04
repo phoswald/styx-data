@@ -2,7 +2,7 @@ package styx.data.impl;
 
 import styx.data.Value;
 
-public abstract class AbstractValue implements Value {
+abstract class AbstractValue implements Value {
 
     /**
      * Subclasses must provide a value-based implementation consistent with equals() and hashCode()

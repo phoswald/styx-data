@@ -31,8 +31,8 @@ import styx.data.Value;
  */
 public class BinaryTreeComplex extends AbstractValue implements Complex, Pair {
 
-    /** The starting point for working with complex values */
-    public static final BinaryTreeComplex EMPTY = new BinaryTreeComplex();
+    /** the starting point for working with complex values */
+    public static final Complex EMPTY = new BinaryTreeComplex();
 
     /** the key of this node, never null except for empty node */
     private final Value key;
