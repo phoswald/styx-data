@@ -1,7 +1,5 @@
 package styx.data.impl;
 
-import static styx.data.Values.pair;
-
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -11,12 +9,36 @@ import styx.data.Complex;
 import styx.data.Pair;
 import styx.data.Value;
 
-public class BinaryTreeComplex extends AbstractValue implements Complex {
+/**
+ * An implementation of a complex value as an immutable, balanced binary tree.
+ * <p>
+ * Users never create instances directly. Instead, trees can be constructed by starting with the
+ * empty node (which is exposed by the public static field EMPTY) and using the put() and putAll()
+ * or add() and addAll() methods to insert entries.
+ * <p>
+ * Note that instances of this class can be regarded as a whole tree (i.e. as a complex value)
+ * or as a node of the tree (i.e. as a key/value-pair) at the same time.
+ * <p>
+ * For this reason, this class also implements the Pair interface, which is used when iterating
+ * or streaming over a complex value's entries. The Pair interface, however, should be regarded
+ * as an implementation detail, which is not directly exposed.
+ * <p>
+ * <u>Important</u>: The Pair interface requires its key and value to be non-null, therefore the
+ * node for the empty tree (which is also referenced from every unused left or right pointer of
+ * every regular tree node) must not be regarded as a pair. The iterator implementation is
+ * consistent with this restriction: The empty node is never retured when iterating or streaming
+ * over a complex value's entries.
+ */
+public class BinaryTreeComplex extends AbstractValue implements Complex, Pair {
 
+    /** The starting point for working with complex values */
     public static final BinaryTreeComplex EMPTY = new BinaryTreeComplex();
 
-    /** the key/value-pair of this node, never null except for empty node */
-    private final Pair pair;
+    /** the key of this node, never null except for empty node */
+    private final Value key;
+
+    /** the value of this node, never null except for empty node */
+    private final Value value;
 
     /** the left subtree, never null but points to empty node if not used */
     private final BinaryTreeComplex left;
@@ -28,21 +50,33 @@ public class BinaryTreeComplex extends AbstractValue implements Complex {
     private final int height;
 
     private BinaryTreeComplex() {
-        this.pair = null;
+        this.key = null;
+        this.value = null;
         this.left = this;
         this.right = this;
         this.height = 0;
     }
 
-    private BinaryTreeComplex(Pair pair, BinaryTreeComplex left, BinaryTreeComplex right) {
-        this.pair = Objects.requireNonNull(pair);
+    private BinaryTreeComplex(Value key, Value value, BinaryTreeComplex left, BinaryTreeComplex right) {
+        this.key = Objects.requireNonNull(key);
+        this.value = Objects.requireNonNull(value);
         this.left = Objects.requireNonNull(left);
         this.right = Objects.requireNonNull(right);
         this.height = 1 + Math.max(left.height, right.height);
     }
 
+    @Override
+    public Value key() {
+        return Objects.requireNonNull(key);
+    }
+
+    @Override
+    public Value value() {
+        return Objects.requireNonNull(value);
+    }
+
     private boolean isEmpty() {
-        return height == 0;
+        return key == null;
     }
 
     private int balance() {
@@ -108,9 +142,9 @@ public class BinaryTreeComplex extends AbstractValue implements Complex {
 
     private static Optional<Value> get(BinaryTreeComplex node, Value key) {
         while(!node.isEmpty()) {
-            int order = key.compareTo(node.pair.key());
+            int order = key.compareTo(node.key);
             if(order == 0) {
-                return Optional.of(node.pair.value());
+                return Optional.of(node.value);
             } else if(order < 0) {
                 node = node.left;
             } else /* order > 0 */ {
@@ -125,22 +159,22 @@ public class BinaryTreeComplex extends AbstractValue implements Complex {
             if(value == null) {
                 return node /* empty */; // removing from empty tree, result is empty
             } else {
-                return new BinaryTreeComplex(pair(key, value), node /* empty */, node /* empty */);
+                return new BinaryTreeComplex(key, value, node /* empty */, node /* empty */);
             }
         } else {
-            int order = key.compareTo(node.pair.key());
+            int order = key.compareTo(node.key);
             if(order == 0) {
                 if(value == null) {
                     return merge(node.left, node.right); // remove
                 } else {
-                    return new BinaryTreeComplex(pair(key, value), node.left, node.right); // replace
+                    return new BinaryTreeComplex(key, value, node.left, node.right); // replace
                 }
             } else if(order < 0) {
-                return balance(new BinaryTreeComplex(node.pair,
+                return balance(new BinaryTreeComplex(node.key, node.value,
                         put(node.left, key, value),
                         node.right));
             } else /* order > 0 */ {
-                return balance(new BinaryTreeComplex(node.pair,
+                return balance(new BinaryTreeComplex(node.key, node.value,
                         node.left,
                         put(node.right, key, value)));
             }
@@ -161,16 +195,16 @@ public class BinaryTreeComplex extends AbstractValue implements Complex {
             while(!succ.left.isEmpty()) {
                 succ = succ.left;
             }
-            return balance(new BinaryTreeComplex(succ.pair,
+            return balance(new BinaryTreeComplex(succ.key, succ.value,
                     left,
-                    put(right, succ.pair.key(), null)));
+                    put(right, succ.key, null)));
         }
     }
 
     private static BinaryTreeComplex balance(BinaryTreeComplex node) {
         if(node.balance() > 1) {
             if(node.right.balance() <= -1) {
-                node = rotateLeft(new BinaryTreeComplex(node.pair,
+                node = rotateLeft(new BinaryTreeComplex(node.key, node.value,
                         node.left,
                         rotateRight(node.right)));
             } else {
@@ -178,7 +212,7 @@ public class BinaryTreeComplex extends AbstractValue implements Complex {
             }
         } else if(node.balance() < -1) {
             if(node.left.balance() >= 1) {
-                node = rotateRight(new BinaryTreeComplex(node.pair,
+                node = rotateRight(new BinaryTreeComplex(node.key, node.value,
                         rotateLeft(node.left),
                         node.right));
             } else {
@@ -189,15 +223,15 @@ public class BinaryTreeComplex extends AbstractValue implements Complex {
     }
 
     private static BinaryTreeComplex rotateLeft(BinaryTreeComplex node) {
-        return new BinaryTreeComplex(node.right.pair,
-                new BinaryTreeComplex(node.pair, node.left, node.right.left),
+        return new BinaryTreeComplex(node.right.key, node.right.value,
+                new BinaryTreeComplex(node.key, node.value, node.left, node.right.left),
                 node.right.right);
     }
 
     private static BinaryTreeComplex rotateRight(BinaryTreeComplex node) {
-        return new BinaryTreeComplex(node.left.pair,
+        return new BinaryTreeComplex(node.left.key, node.left.value,
                 node.left.left,
-                new BinaryTreeComplex(node.pair, node.left.right, node.right));
+                new BinaryTreeComplex(node.key, node.value, node.left.right, node.right));
     }
 
     private static int compare(Complex a, Complex b) {
@@ -235,7 +269,7 @@ public class BinaryTreeComplex extends AbstractValue implements Complex {
         }
 
         @Override
-        public Pair next() {
+        public BinaryTreeComplex next() {
             if(!hasNext()) {
                 throw new NoSuchElementException();
             }
@@ -246,7 +280,7 @@ public class BinaryTreeComplex extends AbstractValue implements Complex {
             } else {
                 pos--;
             }
-            return Objects.requireNonNull(node.pair);
+            return node;
         }
 
         private void walkLeft(BinaryTreeComplex node) {
