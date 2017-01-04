@@ -6,6 +6,7 @@ import java.util.Map;
 import styx.data.impl.AbstractNumeric;
 import styx.data.impl.BinaryTreeComplex;
 import styx.data.impl.ByteArrayBinary;
+import styx.data.impl.DefaultPair;
 import styx.data.impl.LinkedListReference;
 import styx.data.impl.StringText;
 
@@ -73,5 +74,9 @@ public class Values {
 
     public static Complex list(Collection<? extends Value> values) {
         return empty().addAll(values);
+    }
+
+    public static Pair pair(Value key, Value value) {
+        return new DefaultPair(key, value);
     }
 }

@@ -1,21 +1,21 @@
 package styx.data;
 
-import java.util.Objects;
+/**
+ * An immutable key/value pair.
+ */
+public interface Pair {
 
-public class Pair {
-    private final Value key;
-    private final Value value;
+    /**
+     * Returns the key.
+     *
+     * @return the key, never null.
+     */
+    public Value key();
 
-    public Pair(Value key, Value value) {
-        this.key = Objects.requireNonNull(key);
-        this.value = Objects.requireNonNull(value);
-    }
-
-    public Value key() {
-        return key;
-    }
-
-    public Value value() {
-        return value;
-    }
+    /**
+     * Returns the value.
+     *
+     * @return the value, never null.
+     */
+    public Value value();
 }

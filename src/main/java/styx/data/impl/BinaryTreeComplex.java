@@ -1,5 +1,7 @@
 package styx.data.impl;
 
+import static styx.data.Values.pair;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -87,7 +89,7 @@ public class BinaryTreeComplex extends AbstractValue implements Complex {
     @Override
     public Optional<Value> get(Value key) {
         if(key == null) {
-            throw new IllegalArgumentException("The key must not be null");
+            throw new IllegalArgumentException("The key must not be null.");
         }
         return get(this, key);
     }
@@ -95,7 +97,7 @@ public class BinaryTreeComplex extends AbstractValue implements Complex {
     @Override
     public Complex put(Value key, Value value) {
         if(key == null) {
-            throw new IllegalArgumentException("The key must not be null");
+            throw new IllegalArgumentException("The key must not be null.");
         }
         return put(this, key, value);
     }
@@ -139,7 +141,7 @@ public class BinaryTreeComplex extends AbstractValue implements Complex {
             if(value == null) {
                 return node /* empty */; // removing from empty tree, result is empty
             } else {
-                return new BinaryTreeComplex(new Pair(key, value), node /* empty */, node /* empty */);
+                return new BinaryTreeComplex(pair(key, value), node /* empty */, node /* empty */);
             }
         } else {
             int order = key.compareTo(node.pair.key());
@@ -147,7 +149,7 @@ public class BinaryTreeComplex extends AbstractValue implements Complex {
                 if(value == null) {
                     return merge(node.left, node.right); // remove
                 } else {
-                    return new BinaryTreeComplex(new Pair(key, value), node.left, node.right); // replace
+                    return new BinaryTreeComplex(pair(key, value), node.left, node.right); // replace
                 }
             } else if(order < 0) {
                 return balance(new BinaryTreeComplex(node.pair,

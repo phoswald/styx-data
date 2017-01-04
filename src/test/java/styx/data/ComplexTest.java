@@ -10,6 +10,7 @@ import static styx.data.Values.complex;
 import static styx.data.Values.empty;
 import static styx.data.Values.list;
 import static styx.data.Values.number;
+import static styx.data.Values.pair;
 import static styx.data.Values.text;
 
 import java.lang.reflect.Field;
@@ -45,7 +46,7 @@ public class ComplexTest {
 
     @Test
     public void complex_onePair_success() {
-        Complex value = complex(new Pair(text("A"), text("foo")));
+        Complex value = complex(pair(text("A"), text("foo")));
         assertNotNull(value);
         assertSize(1, value);
         assertEquals(text("foo"), value.get(text("A")).get());
@@ -53,7 +54,7 @@ public class ComplexTest {
 
     @Test
     public void complex_twoPairs_success() {
-        Complex value = complex(new Pair(text("A"), text("foo")), new Pair(text("B"), text("bar")));
+        Complex value = complex(pair(text("A"), text("foo")), pair(text("B"), text("bar")));
         assertNotNull(value);
         assertSize(2, value);
         assertEquals(text("foo"), value.get(text("A")).get());
@@ -69,7 +70,7 @@ public class ComplexTest {
 
     @Test
     public void complex_listOfOne_success() {
-        Complex value = complex(Collections.singletonList(new Pair(text("A"), text("foo"))));
+        Complex value = complex(Collections.singletonList(pair(text("A"), text("foo"))));
         assertNotNull(value);
         assertSize(1, value);
         assertEquals(text("foo"), value.get(text("A")).get());
@@ -77,7 +78,7 @@ public class ComplexTest {
 
     @Test
     public void complex_listOfTwo_success() {
-        Complex value = complex(Arrays.asList(new Pair(text("A"), text("foo")), new Pair(text("B"), text("bar"))));
+        Complex value = complex(Arrays.asList(pair(text("A"), text("foo")), pair(text("B"), text("bar"))));
         assertNotNull(value);
         assertSize(2, value);
         assertEquals(text("foo"), value.get(text("A")).get());
@@ -197,7 +198,7 @@ public class ComplexTest {
 
     @Test
     public void get_valid_success() {
-        Complex value = complex(new Pair(text("A"), text("foo")), new Pair(text("B"), text("bar")));
+        Complex value = complex(pair(text("A"), text("foo")), pair(text("B"), text("bar")));
         assertEquals(text("foo"), value.get(text("A")).get());
         assertEquals(text("bar"), value.get(text("B")).get());
         assertFalse(value.get(text("C")).isPresent());
@@ -220,7 +221,7 @@ public class ComplexTest {
     @Test
     public void put_manyAscending_balanced() {
         List<Pair> list = IntStream.rangeClosed(1, 1000).
-                mapToObj(i -> new Pair(number(i), text("Val" + i))).
+                mapToObj(i -> pair(number(i), text("Val" + i))).
                 collect(Collectors.toList());
         Complex value = complex(list);
         assertEqualPairs(list, value);
@@ -235,7 +236,7 @@ public class ComplexTest {
     @Test
     public void put_manyDescending_balanced() {
         List<Pair> list = IntStream.rangeClosed(1, 1000).
-                mapToObj(i -> new Pair(number(-i), text("Val" + i))).
+                mapToObj(i -> pair(number(-i), text("Val" + i))).
                 collect(Collectors.toList());
         Complex value = complex(list);
         assertEqualPairs(list, value);
@@ -251,7 +252,7 @@ public class ComplexTest {
     public void put_manyRandom_balanced() {
         Random random = new Random(0); // keep it deterministic!
         List<Pair> list = IntStream.rangeClosed(1, 1000).
-                mapToObj(i -> new Pair(number(random.nextLong()), text("Val" + i))).
+                mapToObj(i -> pair(number(random.nextLong()), text("Val" + i))).
                 collect(Collectors.toList());
         Complex value = complex(list);
         assertEqualPairs(list, value);
