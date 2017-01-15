@@ -51,6 +51,7 @@ class Serializer {
                     case '\r': sb.append("\\r"); break;
                     case '\n': sb.append("\\n"); break;
                     case '"':  sb.append("\\\""); break;
+                    case '\\': sb.append("\\\\"); break;
                     default:   sb.append(character); break;
                 }
             }

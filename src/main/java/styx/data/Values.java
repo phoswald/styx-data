@@ -8,6 +8,7 @@ import styx.data.impl.BinaryTreeComplex;
 import styx.data.impl.ByteArrayBinary;
 import styx.data.impl.DefaultPair;
 import styx.data.impl.LinkedListReference;
+import styx.data.impl.Parser;
 import styx.data.impl.StringText;
 
 public class Values {
@@ -78,5 +79,9 @@ public class Values {
 
     public static Pair pair(Value key, Value value) {
         return new DefaultPair(key, value);
+    }
+
+    public static Value parse(String input) {
+        return Parser.parse(input);
     }
 }

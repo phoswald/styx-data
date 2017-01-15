@@ -129,7 +129,7 @@ public class ValueTest {
         assertEquals("\":-)\"", text(":-)").toString());
         assertEquals("\"two words\"", text("two words").toString());
         assertEquals("\"1word\"", text("1word").toString());
-        assertEquals("\"\\t\\r\\n\\\"\"", text("\t\r\n\"").toString());
+        assertEquals("\"\\t\\r\\n\\\"\\\\\"", text("\t\r\n\"\\").toString());
         assertEquals("Ident1", text("Ident1").toString());
         assertEquals("_ident", text("_ident").toString());
     }
