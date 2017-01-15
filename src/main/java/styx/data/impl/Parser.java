@@ -10,7 +10,6 @@ import static styx.data.Values.text;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Stack;
 
 import styx.data.Pair;
 import styx.data.ParserException;
@@ -22,27 +21,28 @@ public class Parser {
     private final char[] input;
     private int pos;
 
-    public Parser(char[] input) {
-        this.input = input;
+    public Parser(String input) {
+        this.input = input.toCharArray();
         this.pos = 0;
     }
 
-    public static Value parse(String input) {
-        Parser instance = new Parser(input.toCharArray());
+    public Value parse() {
         CollectingHandler handler = new CollectingHandler();
-        instance.parse(handler);
+        parse(handler);
         return handler.collect();
     }
 
-    private void parse(Handler handler) {
-        ArrayList<Value> values = new ArrayList<>();
+    public void parse(Handler handler) {
         boolean hasKey = false;
-        Stack<Block> blocks = new Stack<>();
-        blocks.push(new Block(0));
+        boolean hasStuff = false;
+        List<Value> values = new ArrayList<>();
+        FastStack<Block> blocks = new FastStack<>(Block::new, Block::init);
+        blocks.push();
         while(true) {
             readWS();
             Value next = readSimple();
             if(next != null) {
+                hasStuff = true;
                 values.add(next);
             } else if(pos == input.length || input[pos] == ',' || input[pos] == '}') {
                 if(!values.isEmpty()) {
@@ -65,8 +65,9 @@ public class Parser {
                     }
                     blocks.pop();
                 }
-                values.clear();
                 hasKey = false;
+                hasStuff = true;
+                values.clear();
                 pos++;
             } else if(input[pos] == '{') {
                 if(!hasKey) {
@@ -75,9 +76,10 @@ public class Parser {
                 for(int i=0; i<values.size(); i++) {
                     handler.open(values.get(i));
                 }
-                blocks.push(new Block(values.size()));
-                values.clear();
+                blocks.push().levelCount = values.size();
                 hasKey = false;
+                hasStuff = false;
+                values.clear();
                 pos++;
             } else if(input[pos] == ':' && blocks.size() > 1 && !hasKey && values.size() == 1) {
                 hasKey = true;
@@ -86,7 +88,7 @@ public class Parser {
                 throw new ParserException("Unexpected token '" + input[pos] + "'.");
             }
         }
-        if(blocks.size() > 1) {
+        if(!hasStuff || blocks.size() > 1) {
             throw new ParserException("Unexpected EOF.");
         }
     }
@@ -115,10 +117,10 @@ public class Parser {
 
     private Value readSimple() {
         if(pos < input.length) {
-            if(isIdentifierStartChar(input[pos])) {
+            if(FormatUtils.isIdentifierStartChar(input[pos])) {
                 StringBuilder sb = new StringBuilder();
                 sb.append(input[pos++]);
-                while(pos < input.length && isIdentifierChar(input[pos])) {
+                while(pos < input.length && FormatUtils.isIdentifierChar(input[pos])) {
                     sb.append(input[pos++]);
                 }
                 return text(sb.toString());
@@ -154,26 +156,26 @@ public class Parser {
             if(pos+1 < input.length && input[pos] == '0' && input[pos+1] == 'x') {
                 pos+=2;
                 ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-                while(pos+1 < input.length && isHexChar(input[pos]) && isHexChar(input[pos+1])) {
-                    bytes.write((getHexDigit(input[pos]) << 4) + getHexDigit(input[pos+1]));
+                while(pos+1 < input.length && FormatUtils.isHexChar(input[pos]) && FormatUtils.isHexChar(input[pos+1])) {
+                    bytes.write((FormatUtils.getHexDigit(input[pos]) << 4) + FormatUtils.getHexDigit(input[pos+1]));
                     pos+=2;
                 }
-                if(pos < input.length && isHexChar(input[pos])) {
+                if(pos < input.length && FormatUtils.isHexChar(input[pos])) {
                     throw new ParserException("Invalid binary value: even number of digits expected.");
                 }
                 return binary(bytes.toByteArray());
             }
-            if(isDigit(input[pos]) || input[pos] == '-') {
+            if(FormatUtils.isDigit(input[pos]) || input[pos] == '-') {
                 // TODO: support fractional numbers and exponential notation
                 StringBuilder sb = new StringBuilder();
                 sb.append(input[pos++]);
-                while(pos < input.length && isDigit(input[pos])) {
+                while(pos < input.length && FormatUtils.isDigit(input[pos])) {
                     sb.append(input[pos++]);
                 }
                 return number(Double.valueOf(sb.toString()));
             }
             if(input[pos] == '<') {
-                // TODO support complex reference values
+                // TODO: support complex reference values
                 pos++;
                 if(pos < input.length && input[pos] == '/') {
                     pos++;
@@ -205,22 +207,6 @@ public class Parser {
             }
         }
         return null;
-    }
-
-    private boolean isDigit(char character) {
-        return character >= '0' && character <= '9';
-    }
-
-    private boolean isHexChar(char character) {
-        return (character >= '0' && character <= '9') || (character >= 'A' && character <= 'F');
-    }
-
-    private int getHexDigit(char character) {
-        if(character <= '9') {
-            return character - '0';
-        } else {
-            return character - 'A' + 10;
-        }
     }
 
 //    private Value readComplex() {
@@ -260,20 +246,12 @@ public class Parser {
 //        return null;
 //    }
 
-    private static boolean isIdentifierStartChar(char character) {
-        return (character >= 'A' && character <= 'Z') || (character >= 'a' && character <= 'z') || (character == '_');
-    }
-
-    private static boolean isIdentifierChar(char character) {
-        return isIdentifierStartChar(character) || (character >= '0' && character <= '9');
-    }
-
     private static class Block {
-        private final int levelCount;
-        int nextAutoKey = 1;
-
-        private Block(int levelCount) {
-            this.levelCount = levelCount;
+        private int levelCount;
+        private int nextAutoKey;
+        private void init() {
+            levelCount = 0;
+            nextAutoKey = 1;
         }
     }
 
@@ -284,40 +262,39 @@ public class Parser {
     }
 
     private static class CollectingHandler implements Handler {
-        private Context context = new Context(null, null);
+        private final FastStack<Context> context = new FastStack<>(Context::new, Context::init);
+
+        private CollectingHandler() {
+            context.push();
+        }
 
         @Override
         public void open(Value key) {
-            context = new Context(context, key);
+            context.push().key = key;
         }
 
         @Override
         public void value(Value key, Value value) {
-            context.pairs.add(pair(key, value));
+            context.peek().pairs.add(pair(key, value));
         }
 
         @Override
         public void close() {
-            context.parent.pairs.add(pair(context.key, complex(context.pairs)));
-            context = context.parent;
+            Pair pair = pair(context.peek().key, complex(context.peek().pairs));
+            context.pop();
+            context.peek().pairs.add(pair);
         }
 
         public Value collect() {
-            if(context.pairs.isEmpty()) {
-                throw new ParserException("Unexpected EOF."); // TODO: move to parse()
-            } else {
-                return context.pairs.get(0).value();
-            }
+            return context.peek().pairs.get(0).value();
         }
 
         private static class Context {
-            private final Context parent;
-            private final Value key;
-            private final List<Pair> pairs = new ArrayList<>();
-
-            private Context(Context parent, Value key) {
-                this.parent = parent;
-                this.key = key;
+            private Value key;
+            private List<Pair> pairs;
+            private void init() {
+                key = null;
+                pairs = new ArrayList<>();
             }
         }
     }

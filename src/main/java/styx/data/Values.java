@@ -82,6 +82,6 @@ public class Values {
     }
 
     public static Value parse(String input) {
-        return Parser.parse(input);
+        return new Parser(input).parse();
     }
 }

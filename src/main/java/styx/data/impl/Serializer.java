@@ -40,7 +40,7 @@ class Serializer {
     }
 
     private void serialize(StringBuilder sb, Text value) {
-        if(isIdentifier(value)) {
+        if(FormatUtils.isIdentifier(value)) {
             sb.append(value.toCharString());
         } else {
             sb.append('"');
@@ -63,8 +63,8 @@ class Serializer {
         sb.append("0x");
         for(int index = 0; index < value.byteCount(); index++) {
             int unsignedByte = value.byteAt(index) & 0xFF;
-            sb.append(getHexChar(unsignedByte / 16));
-            sb.append(getHexChar(unsignedByte % 16));
+            sb.append(FormatUtils.getHexChar(unsignedByte / 16));
+            sb.append(FormatUtils.getHexChar(unsignedByte % 16));
         }
     }
 
@@ -99,34 +99,5 @@ class Serializer {
             sb.append(pair.value().toString());
         }
         sb.append('}');
-    }
-
-    private static boolean isIdentifier(Text value) {
-        int charCount = value.charCount();
-        for(int index = 0; index < charCount; index++) {
-            char character = value.charAt(index);
-            if(index == 0 && !isIdentifierStartChar(character)) {
-                return false;
-            } else if(!isIdentifierChar(character)) {
-                return false;
-            }
-        }
-        return charCount > 0;
-    }
-
-    private static boolean isIdentifierStartChar(char character) {
-        return (character >= 'A' && character <= 'Z') || (character >= 'a' && character <= 'z') || (character == '_');
-    }
-
-    private static boolean isIdentifierChar(char character) {
-        return isIdentifierStartChar(character) || (character >= '0' && character <= '9');
-    }
-
-    private static char getHexChar(int digit) {
-        if(digit < 10) {
-            return (char) ('0' + digit);
-        } else {
-            return (char) ('A' + digit - 10);
-        }
     }
 }
