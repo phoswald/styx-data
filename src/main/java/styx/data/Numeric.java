@@ -6,6 +6,13 @@ package styx.data;
 public interface Numeric extends Value {
 
     /**
+     * Checks whether the number can be represented exactly by a long.
+     *
+     * @return true if toInteger() will succeed, fals if toInteger() will fail.
+     */
+    boolean isInteger();
+
+    /**
      * Converts the number to a 32-bit signed integer value.
      *
      * @return an int that is equal to the number.

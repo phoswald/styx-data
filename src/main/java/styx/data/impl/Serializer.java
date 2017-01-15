@@ -1,5 +1,7 @@
 package styx.data.impl;
 
+import static styx.data.Values.number;
+
 import styx.data.Binary;
 import styx.data.Complex;
 import styx.data.Numeric;
@@ -38,18 +40,22 @@ class Serializer {
     }
 
     private void serialize(StringBuilder sb, Text value) {
-        sb.append('"');
-        for(int index = 0; index < value.charCount(); index++) {
-            char character = value.charAt(index);
-            switch(character) {
-                case '\t': sb.append("\\t"); break;
-                case '\r': sb.append("\\r"); break;
-                case '\n': sb.append("\\n"); break;
-                case '"':  sb.append("\\\""); break;
-                default:   sb.append(character); break;
+        if(isIdentifier(value)) {
+            sb.append(value.toCharString());
+        } else {
+            sb.append('"');
+            for(int index = 0; index < value.charCount(); index++) {
+                char character = value.charAt(index);
+                switch(character) {
+                    case '\t': sb.append("\\t"); break;
+                    case '\r': sb.append("\\r"); break;
+                    case '\n': sb.append("\\n"); break;
+                    case '"':  sb.append("\\\""); break;
+                    default:   sb.append(character); break;
+                }
             }
+            sb.append('"');
         }
-        sb.append('"');
     }
 
     private void serialize(StringBuilder sb, Binary value) {
@@ -62,29 +68,57 @@ class Serializer {
     }
 
     private void serialize(StringBuilder sb, Reference value) {
-        sb.append('[');
+        sb.append("<");
+        if(!value.parent().isPresent()) {
+            sb.append('/');
+        }
         for(int index = 0; index < value.partCount(); index++) {
-            if(index > 0) {
-                sb.append(',');
-            }
+            sb.append('/');
             sb.append(value.partAt(index).toString());
         }
-        sb.append(']');
+        sb.append('>');
     }
 
     private void serialize(StringBuilder sb, Complex value) {
         sb.append('{');
         boolean first = true;
+        Numeric nextAutoKey = number(1);
         for(Pair pair : value) {
             if(!first) {
                 sb.append(',');
             }
             first = false;
-            sb.append(pair.key().toString());
-            sb.append(':');
+            if(pair.key().compareTo(nextAutoKey) != 0) {
+                sb.append(pair.key().toString());
+                sb.append(':');
+            }
+            if(pair.key().isNumeric() && pair.key().asNumeric().isInteger()) {
+                nextAutoKey = number(pair.key().asNumeric().toInteger() + 1);
+            }
             sb.append(pair.value().toString());
         }
         sb.append('}');
+    }
+
+    private static boolean isIdentifier(Text value) {
+        int charCount = value.charCount();
+        for(int index = 0; index < charCount; index++) {
+            char character = value.charAt(index);
+            if(index == 0 && !isIdentifierStartChar(character)) {
+                return false;
+            } else if(!isIdentifierChar(character)) {
+                return false;
+            }
+        }
+        return charCount > 0;
+    }
+
+    private static boolean isIdentifierStartChar(char character) {
+        return (character >= 'A' && character <= 'Z') || (character >= 'a' && character <= 'z') || (character == '_');
+    }
+
+    private static boolean isIdentifierChar(char character) {
+        return isIdentifierStartChar(character) || (character >= '0' && character <= '9');
     }
 
     private static char getHexChar(int digit) {

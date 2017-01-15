@@ -38,6 +38,11 @@ public abstract class AbstractNumeric extends AbstractValue implements Numeric {
     }
 
     @Override
+    public boolean isInteger() {
+        return false;
+    }
+
+    @Override
     public int toInteger() {
         throw new ArithmeticException("The number cannot be represented exactly by an int.");
     }

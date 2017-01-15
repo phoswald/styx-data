@@ -9,6 +9,7 @@ import static styx.data.Values.binary;
 import static styx.data.Values.complex;
 import static styx.data.Values.list;
 import static styx.data.Values.number;
+import static styx.data.Values.pair;
 import static styx.data.Values.reference;
 import static styx.data.Values.text;
 
@@ -117,16 +118,41 @@ public class ValueTest {
     }
 
     @Test
-    public void toString_valid_success() {
+    public void toString_number_success() {
         assertEquals("1", number(1).toString());
         assertEquals("1.25", number(1.25).toString());
+    }
+
+    @Test
+    public void toString_text_success() {
         assertEquals("\"\"", text().toString());
-        assertEquals("\"XYZ\"", text("XYZ").toString());
+        assertEquals("\":-)\"", text(":-)").toString());
+        assertEquals("\"two words\"", text("two words").toString());
+        assertEquals("\"1word\"", text("1word").toString());
         assertEquals("\"\\t\\r\\n\\\"\"", text("\t\r\n\"").toString());
+        assertEquals("Ident1", text("Ident1").toString());
+        assertEquals("_ident", text("_ident").toString());
+    }
+
+    @Test
+    public void toString_binary_success() {
         assertEquals("0x", binary().toString());
         assertEquals("0x001234DEAD", binary(new byte[] { 0, 0x12, 0x34, (byte) 0xDE, (byte) 0xAD }).toString());
-        assertEquals("[\"A\",\"B\"]", reference(text("A"), text("B")).toString());
-        assertEquals("{1:\"A\",2:\"B\"}", list(text("A"), text("B")).toString());
+    }
+
+    @Test
+    public void toString_refernce_success() {
+        assertEquals("</>", reference().toString());
+        assertEquals("</part1/part2>", reference(text("part1"), text("part2")).toString());
+    }
+
+    @Test
+    public void toString_complex_success() {
+        assertEquals("{}", complex().toString());
+        assertEquals("{key1:val1,key2:val2}", complex(pair(text("key1"), text("val1")), pair(text("key2"), text("val2"))).toString());
+        assertEquals("{val1,val2}", list(text("val1"), text("val2")).toString());
+        assertEquals("{3:val3,val4,key1:val1}", complex(pair(text("key1"), text("val1")), pair(number(3), text("val3")), pair(number(4), text("val4"))).toString());
+        assertEquals("{1.1:val1,1.2:val2}", complex(pair(number(1.1), text("val1")), pair(number(1.2), text("val2"))).toString());
     }
 
     @Test
@@ -139,10 +165,10 @@ public class ValueTest {
     @Test
     public void hashCode_valid_success() {
         assertEquals("1".hashCode(), number(1).hashCode());
-        assertEquals("\"XYZ\"".hashCode(), text("XYZ").hashCode());
+        assertEquals("\":-)\"".hashCode(), text(":-)").hashCode());
         assertEquals("0x001234DEAD".hashCode(), binary(new byte[] { 0, 0x12, 0x34, (byte) 0xDE, (byte) 0xAD }).hashCode());
-        assertEquals("[]".hashCode(), reference().hashCode());
-        assertEquals("{}".hashCode(), list().hashCode());
+        assertEquals("</part>".hashCode(), reference(text("part")).hashCode());
+        assertEquals("{val}".hashCode(), list(text("val")).hashCode());
     }
 
     @Test
