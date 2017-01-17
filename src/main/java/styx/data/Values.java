@@ -1,5 +1,16 @@
 package styx.data;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.UncheckedIOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Map;
 
@@ -12,6 +23,8 @@ import styx.data.impl.Parser;
 import styx.data.impl.StringText;
 
 public class Values {
+
+    private static final Charset CHARSET = StandardCharsets.UTF_8;
 
     public static Numeric number(long value) {
         return AbstractNumeric.valueOf(value);
@@ -82,6 +95,34 @@ public class Values {
     }
 
     public static Value parse(String input) {
-        return new Parser(input).parse();
+        return read(new StringReader(input));
+    }
+
+    public static Value read(Path path) {
+        return read(path, CHARSET);
+    }
+
+    public static Value read(Path path, Charset charset) {
+        try {
+            return read(Files.newBufferedReader(path, charset));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public static Value read(InputStream stream) {
+        return read(stream, CHARSET);
+    }
+
+    public static Value read(InputStream stream, Charset charset) {
+        return read(new BufferedReader(new InputStreamReader(stream, charset)));
+    }
+
+    public static Value read(Reader reader) {
+        try {
+            return new Parser(reader).parse();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }

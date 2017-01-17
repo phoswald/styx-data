@@ -8,6 +8,8 @@ import static styx.data.Values.reference;
 import static styx.data.Values.text;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,21 +20,23 @@ import styx.data.Value;
 
 public class Parser {
 
-    private final char[] input;
-    private int pos;
+    private final Reader reader;
+    private char current;
+    private char next;
 
-    public Parser(String input) {
-        this.input = input.toCharArray();
-        this.pos = 0;
+    public Parser(Reader reader) throws IOException {
+        this.reader = reader;
+        this.current = (char) reader.read();
+        this.next = (char) reader.read();
     }
 
-    public Value parse() {
+    public Value parse() throws IOException {
         CollectingHandler handler = new CollectingHandler();
         parse(handler);
         return handler.collect();
     }
 
-    public void parse(Handler handler) {
+    public void parse(Handler handler) throws IOException {
         boolean hasKey = false;
         boolean hasStuff = false;
         List<Value> values = new ArrayList<>();
@@ -44,7 +48,7 @@ public class Parser {
             if(next != null) {
                 hasStuff = true;
                 values.add(next);
-            } else if(pos == input.length || input[pos] == ',' || input[pos] == '}') {
+            } else if(eof() || peek() == ',' || peek() == '}') {
                 if(!values.isEmpty()) {
                     if(!hasKey) {
                         values.add(0, number(blocks.peek().nextAutoKey++));
@@ -57,9 +61,9 @@ public class Parser {
                         handler.close();
                     }
                 }
-                if(pos == input.length) {
+                if(eof()) {
                     break;
-                } else if(input[pos] == '}') {
+                } else if(peek() == '}') {
                     for(int i = 0; i < blocks.peek().levelCount; i++) {
                         handler.close();
                     }
@@ -68,8 +72,8 @@ public class Parser {
                 hasKey = false;
                 hasStuff = true;
                 values.clear();
-                pos++;
-            } else if(input[pos] == '{') {
+                skip();
+            } else if(peek() == '{') {
                 if(!hasKey) {
                     values.add(0, number(blocks.peek().nextAutoKey++));
                 }
@@ -80,12 +84,12 @@ public class Parser {
                 hasKey = false;
                 hasStuff = false;
                 values.clear();
-                pos++;
-            } else if(input[pos] == ':' && blocks.size() > 1 && !hasKey && values.size() == 1) {
+                skip();
+            } else if(peek() == ':' && blocks.size() > 1 && !hasKey && values.size() == 1) {
                 hasKey = true;
-                pos++;
+                skip();
             } else {
-                throw new ParserException("Unexpected token '" + input[pos] + "'.");
+                throw new ParserException("Unexpected token '" + peek() + "'.");
             }
         }
         if(!hasStuff || blocks.size() > 1) {
@@ -93,13 +97,13 @@ public class Parser {
         }
     }
 
-    private void readWS() {
-        while(pos < input.length && input[pos] == ' ') {
-            pos++;
+    private void readWS() throws IOException {
+        while(peek() == ' ') {
+            skip();
         }
     }
 
-//    private Value readAny() {
+//    private Value readAny() throws IOException {
 //        readWS();
 //        Value value = readSimple();
 //        if(value == null) {
@@ -115,24 +119,24 @@ public class Parser {
 //        return value;
 //    }
 
-    private Value readSimple() {
-        if(pos < input.length) {
-            if(FormatUtils.isIdentifierStartChar(input[pos])) {
+    private Value readSimple() throws IOException {
+        if(!eof()) {
+            if(FormatUtils.isIdentifierStartChar(peek())) {
                 StringBuilder sb = new StringBuilder();
-                sb.append(input[pos++]);
-                while(pos < input.length && FormatUtils.isIdentifierChar(input[pos])) {
-                    sb.append(input[pos++]);
+                sb.append(read());
+                while(FormatUtils.isIdentifierChar(peek())) {
+                    sb.append(read());
                 }
                 return text(sb.toString());
             }
-            if(input[pos] == '"') {
-                pos++;
+            if(peek() == '"') {
+                skip();
                 StringBuilder sb = new StringBuilder();
-                while(pos < input.length && input[pos] != '"') {
-                    if(input[pos] == '\\') {
-                        pos++;
-                        if(pos < input.length) {
-                            char character = input[pos++];
+                while(!eof() && peek() != '"') {
+                    if(peek() == '\\') {
+                        skip();
+                        if(!eof()) {
+                            char character = read();
                             switch(character) {
                                 case 't':  sb.append('\t'); break;
                                 case 'r':  sb.append('\r'); break;
@@ -144,47 +148,46 @@ public class Parser {
                             }
                         }
                     } else {
-                        sb.append(input[pos++]);
+                        sb.append(read());
                     }
                 }
-                if(pos == input.length) {
+                if(eof()) {
                     throw new ParserException("Invalid textual value: closing '\"' expected.");
                 }
-                pos++;
+                skip();
                 return text(sb.toString());
             }
-            if(pos+1 < input.length && input[pos] == '0' && input[pos+1] == 'x') {
-                pos+=2;
+            if(peek() == '0' && peekNext() == 'x') {
+                skip(); skip();
                 ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-                while(pos+1 < input.length && FormatUtils.isHexChar(input[pos]) && FormatUtils.isHexChar(input[pos+1])) {
-                    bytes.write((FormatUtils.getHexDigit(input[pos]) << 4) + FormatUtils.getHexDigit(input[pos+1]));
-                    pos+=2;
+                while(FormatUtils.isHexChar(peek()) && FormatUtils.isHexChar(peekNext())) {
+                    bytes.write((FormatUtils.getHexDigit(read()) << 4) + FormatUtils.getHexDigit(read()));
                 }
-                if(pos < input.length && FormatUtils.isHexChar(input[pos])) {
+                if(FormatUtils.isHexChar(peek())) {
                     throw new ParserException("Invalid binary value: even number of digits expected.");
                 }
                 return binary(bytes.toByteArray());
             }
-            if(FormatUtils.isDigit(input[pos]) || input[pos] == '-') {
+            if(FormatUtils.isDigit(peek()) || peek() == '-') {
                 // TODO: support fractional numbers and exponential notation
                 StringBuilder sb = new StringBuilder();
-                sb.append(input[pos++]);
-                while(pos < input.length && FormatUtils.isDigit(input[pos])) {
-                    sb.append(input[pos++]);
+                sb.append(read());
+                while(FormatUtils.isDigit(peek())) {
+                    sb.append(read());
                 }
                 return number(Double.valueOf(sb.toString()));
             }
-            if(input[pos] == '<') {
+            if(peek() == '<') {
                 // TODO: support complex reference values
-                pos++;
-                if(pos < input.length && input[pos] == '/') {
-                    pos++;
+                skip();
+                if(peek() == '/') {
+                    skip();
                 } else {
                     throw new ParserException("Invalid reference: '/' expected.");
                 }
                 Reference reference = reference();
-                if(pos < input.length && input[pos] == '>') {
-                    pos++;
+                if(peek() == '>') {
+                    skip();
                 } else {
                     while(true) {
                         Value child = readSimple();
@@ -192,11 +195,11 @@ public class Parser {
                             throw new ParserException("Invalid reference: part or '>' expected.");
                         }
                         reference = reference.child(child);
-                        if(pos < input.length && input[pos] == '/') {
-                            pos++;
+                        if(peek() == '/') {
+                            skip();
                             continue;
-                        } else if(pos < input.length && input[pos] == '>') {
-                            pos++;
+                        } else if(peek() == '>') {
+                            skip();
                             break;
                         } else {
                             throw new ParserException("Invalid reference: '/' or '>' expected.");
@@ -209,18 +212,18 @@ public class Parser {
         return null;
     }
 
-//    private Value readComplex() {
-//        if(pos < input.length && input[pos] == '{') {
+//    private Value readComplex() throws IOException {
+//        if(peek() == '{') {
 //            List<Pair> pairs = new ArrayList<>();
 //            long nextIntegerKey = 1;
 //            do  {
-//                pos++;
+//                skip();
 //                readWS();
 //                Value value1 = readAny();
 //                if(value1 != null) {
 //                    readWS();
-//                    if(pos < input.length && input[pos] == ':') {
-//                        pos++;
+//                    if(peek() == ':') {
+//                        skip();
 //                        readWS();
 //                        Value value2 = readAny();
 //                        if(value2 != null) {
@@ -236,15 +239,39 @@ public class Parser {
 //                    break;
 //                }
 //                readWS();
-//            } while(pos < input.length && input[pos] == ',');
-//            if(pos < input.length && input[pos] == '}') {
-//                pos++;
+//            } while(peek() == ',');
+//            if(peek() == '}') {
+//                skip();
 //                return complex(pairs);
 //            }
 //            throw new IllegalArgumentException();
 //        }
 //        return null;
 //    }
+
+    private char read() throws IOException {
+        char result = current;
+        current = next;
+        next = (char) reader.read();
+        return result;
+    }
+
+    private void skip() throws IOException {
+        current = next;
+        next = (char) reader.read();
+    }
+
+    private boolean eof() {
+        return current == 0xFFFF;
+    }
+
+    private char peek() {
+        return current;
+    }
+
+    private char peekNext() {
+        return next;
+    }
 
     private static class Block {
         private int levelCount;
