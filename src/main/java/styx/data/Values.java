@@ -1,12 +1,17 @@
 package styx.data;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.io.UncheckedIOException;
+import java.io.Writer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -20,6 +25,7 @@ import styx.data.impl.ByteArrayBinary;
 import styx.data.impl.DefaultPair;
 import styx.data.impl.LinkedListReference;
 import styx.data.impl.Parser;
+import styx.data.impl.Serializer;
 import styx.data.impl.StringText;
 
 public class Values {
@@ -121,6 +127,41 @@ public class Values {
     public static Value read(Reader reader) {
         try {
             return new Parser(reader).parse();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public static String serialize(Value value) {
+        StringWriter writer = new StringWriter();
+        write(writer, value);
+        return writer.toString();
+    }
+
+    public static void write(Path path, Value value) {
+        write(path, value, CHARSET);
+    }
+
+    public static void write(Path path, Value value, Charset charset) {
+        try {
+            write(Files.newBufferedWriter(path, charset), value);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public static void write(OutputStream stream, Value value) {
+        write(stream, value, CHARSET);
+    }
+
+    public static void write(OutputStream stream, Value value, Charset charset) {
+        write(new BufferedWriter(new OutputStreamWriter(stream, charset)), value);
+    }
+
+    public static void write(Writer writer, Value value) {
+        try {
+            new Serializer(writer).serialize(value);
+            writer.flush();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

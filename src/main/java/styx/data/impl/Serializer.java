@@ -2,6 +2,9 @@ package styx.data.impl;
 
 import static styx.data.Values.number;
 
+import java.io.IOException;
+import java.io.Writer;
+
 import styx.data.Binary;
 import styx.data.Complex;
 import styx.data.Numeric;
@@ -10,94 +13,98 @@ import styx.data.Reference;
 import styx.data.Text;
 import styx.data.Value;
 
-class Serializer {
+public class Serializer {
 
-    String serialize(Value value) {
-        StringBuilder sb = new StringBuilder();
-        serialize(sb, value);
-        return sb.toString();
+    private final Writer writer;
+
+    public Serializer(Writer writer) {
+        this.writer = writer;
     }
 
-    private void serialize(StringBuilder sb, Value value) {
+    public void serialize(Value value) throws IOException {
+        write(value);
+    }
+
+    private void write(Value value) throws IOException {
         switch(value.kind()) {
             case NUMBER:
-                serialize(sb, value.asNumeric()); break;
+                write(value.asNumeric()); break;
             case TEXT:
-                serialize(sb, value.asText()); break;
+                write(value.asText()); break;
             case BINARY:
-                serialize(sb, value.asBinary()); break;
+                write(value.asBinary()); break;
             case REFERENCE:
-                serialize(sb, value.asReference()); break;
+                write(value.asReference()); break;
             case COMPLEX:
-                serialize(sb, value.asComplex()); break;
+                write(value.asComplex()); break;
             default:
                 throw new IllegalArgumentException();
         }
     }
 
-    private void serialize(StringBuilder sb, Numeric value) {
-        sb.append(value.toDecimalString());
+    private void write(Numeric value) throws IOException {
+        writer.write(value.toDecimalString());
     }
 
-    private void serialize(StringBuilder sb, Text value) {
+    private void write(Text value) throws IOException {
         if(FormatUtils.isIdentifier(value)) {
-            sb.append(value.toCharString());
+            writer.write(value.toCharString());
         } else {
-            sb.append('"');
+            writer.write('"');
             for(int index = 0; index < value.charCount(); index++) {
                 char character = value.charAt(index);
                 switch(character) {
-                    case '\t': sb.append("\\t"); break;
-                    case '\r': sb.append("\\r"); break;
-                    case '\n': sb.append("\\n"); break;
-                    case '"':  sb.append("\\\""); break;
-                    case '\\': sb.append("\\\\"); break;
-                    default:   sb.append(character); break;
+                    case '\t': writer.write("\\t"); break;
+                    case '\r': writer.write("\\r"); break;
+                    case '\n': writer.write("\\n"); break;
+                    case '"':  writer.write("\\\""); break;
+                    case '\\': writer.write("\\\\"); break;
+                    default:   writer.write(character); break;
                 }
             }
-            sb.append('"');
+            writer.write('"');
         }
     }
 
-    private void serialize(StringBuilder sb, Binary value) {
-        sb.append("0x");
+    private void write(Binary value) throws IOException {
+        writer.write("0x");
         for(int index = 0; index < value.byteCount(); index++) {
             int unsignedByte = value.byteAt(index) & 0xFF;
-            sb.append(FormatUtils.getHexChar(unsignedByte / 16));
-            sb.append(FormatUtils.getHexChar(unsignedByte % 16));
+            writer.write(FormatUtils.getHexChar(unsignedByte / 16));
+            writer.write(FormatUtils.getHexChar(unsignedByte % 16));
         }
     }
 
-    private void serialize(StringBuilder sb, Reference value) {
-        sb.append("<");
+    private void write(Reference value) throws IOException {
+        writer.write("<");
         if(!value.parent().isPresent()) {
-            sb.append('/');
+            writer.write('/');
         }
         for(int index = 0; index < value.partCount(); index++) {
-            sb.append('/');
-            sb.append(value.partAt(index).toString());
+            writer.write('/');
+            write(value.partAt(index));
         }
-        sb.append('>');
+        writer.write('>');
     }
 
-    private void serialize(StringBuilder sb, Complex value) {
-        sb.append('{');
+    private void write(Complex value) throws IOException {
+        writer.write('{');
         boolean first = true;
         Numeric nextAutoKey = number(1);
         for(Pair pair : value) {
             if(!first) {
-                sb.append(',');
+                writer.write(',');
             }
             first = false;
             if(pair.key().compareTo(nextAutoKey) != 0) {
-                sb.append(pair.key().toString());
-                sb.append(':');
+                write(pair.key());
+                writer.write(':');
             }
             if(pair.key().isNumeric() && pair.key().asNumeric().isInteger()) {
                 nextAutoKey = number(pair.key().asNumeric().toInteger() + 1);
             }
-            sb.append(pair.value().toString());
+            write(pair.value());
         }
-        sb.append('}');
+        writer.write('}');
     }
 }
