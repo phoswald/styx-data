@@ -12,7 +12,7 @@ import org.junit.Test;
 public class NumericTest {
 
     @Test
-    public void numberOfLong_integer_success() {
+    public void number_integer_success() {
         Numeric value = number(1234);
         assertNotNull(value);
         assertTrue(value.isInteger());
@@ -22,7 +22,7 @@ public class NumericTest {
     }
 
     @Test
-    public void numberOfLong_integerMin_success() {
+    public void number_integerMin_success() {
         Numeric value = number(Integer.MIN_VALUE);
         assertNotNull(value);
         assertTrue(value.isInteger());
@@ -32,7 +32,7 @@ public class NumericTest {
     }
 
     @Test
-    public void numberOfLong_integerMax_success() {
+    public void number_integerMax_success() {
         Numeric value = number(Integer.MAX_VALUE);
         assertNotNull(value);
         assertTrue(value.isInteger());
@@ -42,7 +42,7 @@ public class NumericTest {
     }
 
     @Test
-    public void numberOfLong_long_success() {
+    public void number_long_success() {
         Numeric value = number(12340000000L);
         assertNotNull(value);
         assertFalse(value.isInteger());
@@ -52,7 +52,7 @@ public class NumericTest {
     }
 
     @Test
-    public void numberOfLong_longMin_success() {
+    public void number_longMin_success() {
         Numeric value = number(Long.MIN_VALUE);
         assertNotNull(value);
         assertFalse(value.isInteger());
@@ -62,7 +62,7 @@ public class NumericTest {
     }
 
     @Test
-    public void numberOfLong_longMax_success() {
+    public void number_longMax_success() {
         Numeric value = number(Long.MAX_VALUE);
         assertNotNull(value);
         assertFalse(value.isInteger());
@@ -72,7 +72,7 @@ public class NumericTest {
     }
 
     @Test
-    public void numberOfDouble_integer_success() {
+    public void number_intDouble_success() {
         Numeric value = number(1234.0);
         assertNotNull(value);
         assertEquals(1234, value.toInteger());
@@ -81,7 +81,7 @@ public class NumericTest {
     }
 
     @Test
-    public void numberOfDouble_long_success() {
+    public void number_longDouble_success() {
         Numeric value = number(12340000000.0);
         assertNotNull(value);
         assertFalse(value.isInteger());
@@ -91,7 +91,7 @@ public class NumericTest {
     }
 
     @Test
-    public void numberOfDouble_double_success() {
+    public void number_double_success() {
         Numeric value = number(12.34);
         assertNotNull(value);
         assertFalse(value.isInteger());
