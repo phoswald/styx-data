@@ -153,6 +153,7 @@ public class ValueTest {
         assertEquals("{val1,val2}", list(text("val1"), text("val2")).toString());
         assertEquals("{3:val3,val4,key1:val1}", complex(pair(text("key1"), text("val1")), pair(number(3), text("val3")), pair(number(4), text("val4"))).toString());
         assertEquals("{1.1:val1,1.2:val2}", complex(pair(number(1.1), text("val1")), pair(number(1.2), text("val2"))).toString());
+        assertEquals("{@{key1,key2}:val}", complex(pair(list(text("key1"), text("key2")), text("val"))).toString());
     }
 
     @Test

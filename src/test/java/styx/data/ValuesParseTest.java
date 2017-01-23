@@ -188,6 +188,16 @@ public class ValuesParseTest {
     }
 
     @Test
+    public void parse_complexComplexKey_success() {
+        Value expected = complex(
+                pair(complex(), text("val1")),
+                pair(list(text("key2A"), text("key2B")), text("val2")),
+                pair(complex(text("key3"), text("key3val")), text("val3")));
+        assertEquals(expected, parse("{@{}:val1,@{key2A,key2B}:val2,@{key3:key3val}:val3}"));
+        assertEquals(expected, parse(" { @ { } : val1 , @ { key2A , key2B } : val2 , @ { key3 : key3val } : val3 } "));
+    }
+
+    @Test
     public void parse_complexNotClosed_exception() {
         exception.expect(ParserException.class);
         exception.expectMessage(CoreMatchers.equalTo("Unexpected EOF."));

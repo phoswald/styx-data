@@ -113,6 +113,9 @@ public class Serializer {
                 }
                 first = false;
                 if(pair.key().compareTo(nextAutoKey) != 0) {
+                    if(pair.key().isComplex()) {
+                        writer.write('@');
+                    }
                     write(pair.key());
                     writer.write(':');
                     if(pretty) {

@@ -59,28 +59,35 @@ public class ValuesWriteTest {
     }
 
     @Test
-    public void writePretty_empty_success() throws IOException {
+    public void writePretty_complexEmpty_success() throws IOException {
         StringWriter writer = new StringWriter();
         write(writer, complex(), WriteOption.PRETTY);
         assertEquals("{ }", writer.toString());
     }
 
     @Test
-    public void writePretty_map_success() throws IOException {
+    public void writePretty_complexMap_success() throws IOException {
         StringWriter writer = new StringWriter();
         write(writer, complex(pair(text("key1"), text("val1")), pair(text("key2"), text("val2"))), WriteOption.PRETTY);
         assertEquals("{ key1: val1, key2: val2 }", writer.toString());
     }
 
     @Test
-    public void writePretty_list_success() throws IOException {
+    public void writePretty_complexList1_success() throws IOException {
+        StringWriter writer = new StringWriter();
+        write(writer, complex(pair(number(1), text("val1"))), WriteOption.PRETTY);
+        assertEquals("{ val1 }", writer.toString());
+    }
+
+    @Test
+    public void writePretty_complexList2_success() throws IOException {
         StringWriter writer = new StringWriter();
         write(writer, complex(pair(number(1), text("val1")), pair(number(2), text("val2"))), WriteOption.PRETTY);
         assertEquals("{ val1, val2 }", writer.toString());
     }
 
     @Test
-    public void writePretty_tag_success() throws IOException {
+    public void writePretty_complexTag_success() throws IOException {
         StringWriter writer = new StringWriter();
         write(writer, complex(text("tag"), list(text("val1"), text("val2"))), WriteOption.PRETTY);
         assertEquals("tag { val1, val2 }", writer.toString());

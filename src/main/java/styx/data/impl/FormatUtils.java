@@ -55,6 +55,6 @@ class FormatUtils {
 
     static boolean isTag(Complex value) {
         Iterator<Pair> it = value.iterator();
-        return it.hasNext() && !it.next().key().isComplex() && !it.hasNext();
+        return it.hasNext() && it.next().key().isText() && !it.hasNext();
     }
 }

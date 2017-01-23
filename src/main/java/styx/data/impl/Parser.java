@@ -32,11 +32,11 @@ public class Parser {
 
     public Value parse() throws IOException {
         CollectingHandler handler = new CollectingHandler();
-        parse(handler);
+        parse(handler, false);
         return handler.collect();
     }
 
-    public void parse(Handler handler) throws IOException {
+    public void parse(Handler handler, boolean isKey) throws IOException {
         boolean hasKey = false;
         boolean hasStuff = false;
         List<Value> values = new ArrayList<>();
@@ -48,6 +48,9 @@ public class Parser {
             if(next != null) {
                 hasStuff = true;
                 values.add(next);
+            } else if(peek() == '@') {
+                skip();
+                values.add(readComplex());
             } else if(eof() || peek() == ',' || peek() == '}') {
                 if(!values.isEmpty()) {
                     if(!hasKey) {
@@ -88,6 +91,8 @@ public class Parser {
             } else if(peek() == ':' && blocks.size() > 1 && !hasKey && values.size() == 1) {
                 hasKey = true;
                 skip();
+            } else if(peek() == ':' && isKey) {
+                return; // TODO: make this more robust and more efficient
             } else {
                 throw new ParserException("Unexpected token '" + peek() + "'.");
             }
@@ -102,22 +107,6 @@ public class Parser {
             skip();
         }
     }
-
-//    private Value readAny() throws IOException {
-//        readWS();
-//        Value value = readSimple();
-//        if(value == null) {
-//            value = readComplex();
-//        }
-//        if(value != null) {
-//            readWS();
-//            Value value2 = readAny();
-//            if(value2 != null) {
-//                value = complex(value, value2);
-//            }
-//        }
-//        return value;
-//    }
 
     private Value readSimple() throws IOException {
         if(!eof()) {
@@ -212,42 +201,11 @@ public class Parser {
         return null;
     }
 
-//    private Value readComplex() throws IOException {
-//        if(peek() == '{') {
-//            List<Pair> pairs = new ArrayList<>();
-//            long nextIntegerKey = 1;
-//            do  {
-//                skip();
-//                readWS();
-//                Value value1 = readAny();
-//                if(value1 != null) {
-//                    readWS();
-//                    if(peek() == ':') {
-//                        skip();
-//                        readWS();
-//                        Value value2 = readAny();
-//                        if(value2 != null) {
-//                            readWS();
-//                            pairs.add(pair(value1, value2));
-//                        } else {
-//                            throw new IllegalArgumentException();
-//                        }
-//                    } else {
-//                        pairs.add(pair(number(nextIntegerKey++), value1));
-//                    }
-//                } else {
-//                    break;
-//                }
-//                readWS();
-//            } while(peek() == ',');
-//            if(peek() == '}') {
-//                skip();
-//                return complex(pairs);
-//            }
-//            throw new IllegalArgumentException();
-//        }
-//        return null;
-//    }
+    private Value readComplex() throws IOException {
+        CollectingHandler handler = new CollectingHandler();
+        parse(handler, true);
+        return handler.collect();
+    }
 
     private char read() throws IOException {
         char result = current;
