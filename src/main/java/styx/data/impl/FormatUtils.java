@@ -1,5 +1,9 @@
 package styx.data.impl;
 
+import java.util.Iterator;
+
+import styx.data.Complex;
+import styx.data.Pair;
 import styx.data.Text;
 
 class FormatUtils {
@@ -47,5 +51,10 @@ class FormatUtils {
         } else {
             return (char) ('A' + digit - 10);
         }
+    }
+
+    static boolean isTag(Complex value) {
+        Iterator<Pair> it = value.iterator();
+        return it.hasNext() && !it.next().key().isComplex() && !it.hasNext();
     }
 }

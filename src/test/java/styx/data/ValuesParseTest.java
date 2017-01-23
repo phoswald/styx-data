@@ -155,6 +155,7 @@ public class ValuesParseTest {
         Value expected = complex(text("tag"), text("val"));
         assertEquals(expected, parse("tag val"));
         assertEquals(expected, parse("  tag  val  "));
+        assertEquals(expected, parse("{tag:val}"));
     }
 
     @Test
@@ -162,6 +163,7 @@ public class ValuesParseTest {
         Value expected = complex(text("tag"), list(text("val1"), text("val2")));
         assertEquals(expected, parse("tag{val1,val2}"));
         assertEquals(expected, parse("  tag { val1 , val2 }  "));
+        assertEquals(expected, parse("{tag:{val1,val2}}"));
     }
 
     @Test
@@ -169,6 +171,7 @@ public class ValuesParseTest {
         Value expected = complex(text("tag1"), complex(text("tag2"), list(text("val1"), text("val2"))));
         assertEquals(expected, parse("tag1 tag2{val1,val2}"));
         assertEquals(expected, parse("  tag1 tag2 { val1 , val2 }  "));
+        assertEquals(expected, parse("{tag1:{tag2:{val1,val2}}}"));
     }
 
     @Test
@@ -181,6 +184,7 @@ public class ValuesParseTest {
                 pair(text("key5"), complex(text("tag5A"), complex(text("tag5B"), list(text("val5A"), text("val5B"))))));
         assertEquals(expected, parse("{val1,key2:val2,tag3{val3A,val3B},key4:tag4{val4A,val4B},key5:tag5A tag5B{val5A,val5B}}"));
         assertEquals(expected, parse("  { val1 , key2 : val2 , tag3 { val3A , val3B } , key4 : tag4 { val4A , val4B } , key5 : tag5A tag5B { val5A , val5B } } "));
+        assertEquals(expected, parse("{val1,key2:val2,{tag3:{val3A,val3B}},key4:{tag4:{val4A,val4B}},key5:{tag5A:{tag5B:{val5A,val5B}}}}"));
     }
 
     @Test

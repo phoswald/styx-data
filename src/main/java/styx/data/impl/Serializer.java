@@ -4,6 +4,7 @@ import static styx.data.Values.number;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Arrays;
 
 import styx.data.Binary;
 import styx.data.Complex;
@@ -12,13 +13,16 @@ import styx.data.Pair;
 import styx.data.Reference;
 import styx.data.Text;
 import styx.data.Value;
+import styx.data.WriteOption;
 
 public class Serializer {
 
     private final Writer writer;
+    private final boolean pretty;
 
-    public Serializer(Writer writer) {
+    public Serializer(Writer writer, WriteOption[] options) {
         this.writer = writer;
+        this.pretty = Arrays.asList(options).contains(WriteOption.PRETTY);
     }
 
     public void serialize(Value value) throws IOException {
@@ -88,23 +92,42 @@ public class Serializer {
     }
 
     private void write(Complex value) throws IOException {
-        writer.write('{');
-        boolean first = true;
-        Numeric nextAutoKey = number(1);
-        for(Pair pair : value) {
-            if(!first) {
-                writer.write(',');
-            }
-            first = false;
-            if(pair.key().compareTo(nextAutoKey) != 0) {
-                write(pair.key());
-                writer.write(':');
-            }
-            if(pair.key().isNumeric() && pair.key().asNumeric().isInteger()) {
-                nextAutoKey = number(pair.key().asNumeric().toInteger() + 1);
-            }
+        if(pretty && FormatUtils.isTag(value)) {
+            Pair pair = value.iterator().next();
+            write(pair.key());
+            writer.write(' ');
             write(pair.value());
+        } else {
+            writer.write('{');
+            if(pretty) {
+                writer.write(' ');
+            }
+            boolean first = true;
+            Numeric nextAutoKey = number(1);
+            for(Pair pair : value) {
+                if(!first) {
+                    writer.write(',');
+                    if(pretty) {
+                        writer.write(' ');
+                    }
+                }
+                first = false;
+                if(pair.key().compareTo(nextAutoKey) != 0) {
+                    write(pair.key());
+                    writer.write(':');
+                    if(pretty) {
+                        writer.write(' ');
+                    }
+                }
+                if(pair.key().isNumeric() && pair.key().asNumeric().isInteger()) {
+                    nextAutoKey = number(pair.key().asNumeric().toInteger() + 1);
+                }
+                write(pair.value());
+            }
+            if(pretty && !first) {
+                writer.write(' ');
+            }
+            writer.write('}');
         }
-        writer.write('}');
     }
 }

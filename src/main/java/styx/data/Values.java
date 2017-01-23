@@ -132,35 +132,35 @@ public class Values {
         }
     }
 
-    public static String serialize(Value value) {
+    public static String serialize(Value value, WriteOption... options) {
         StringWriter writer = new StringWriter();
-        write(writer, value);
+        write(writer, value, options);
         return writer.toString();
     }
 
-    public static void write(Path path, Value value) {
-        write(path, value, CHARSET);
+    public static void write(Path path, Value value, WriteOption... options) {
+        write(path, value, CHARSET, options);
     }
 
-    public static void write(Path path, Value value, Charset charset) {
+    public static void write(Path path, Value value, Charset charset, WriteOption... options) {
         try {
-            write(Files.newBufferedWriter(path, charset), value);
+            write(Files.newBufferedWriter(path, charset), value, options);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
-    public static void write(OutputStream stream, Value value) {
-        write(stream, value, CHARSET);
+    public static void write(OutputStream stream, Value value, WriteOption... options) {
+        write(stream, value, CHARSET, options);
     }
 
-    public static void write(OutputStream stream, Value value, Charset charset) {
-        write(new BufferedWriter(new OutputStreamWriter(stream, charset)), value);
+    public static void write(OutputStream stream, Value value, Charset charset, WriteOption... options) {
+        write(new BufferedWriter(new OutputStreamWriter(stream, charset)), value, options);
     }
 
-    public static void write(Writer writer, Value value) {
+    public static void write(Writer writer, Value value, WriteOption... options) {
         try {
-            new Serializer(writer).serialize(value);
+            new Serializer(writer, options).serialize(value);
             writer.flush();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
