@@ -63,6 +63,7 @@ public class ValuesParseTest {
     public void parse_textIdentifier_success() {
         assertEquals(text("xxx"), parse("xxx"));
         assertEquals(text("xxx"), parse("  xxx  "));
+        assertEquals(text("xxx"), parse("\t\r\n\txxx\t\r\n\t"));
     }
 
     @Test
@@ -134,6 +135,8 @@ public class ValuesParseTest {
     public void parse_complexEmpty_success() {
         assertEquals(complex(), parse("{}"));
         assertEquals(complex(), parse("  {  }  "));
+        assertEquals(complex(), parse("{\r\n}"));
+        assertEquals(complex(), parse("\r\n{\r\n}\r\n"));
     }
 
     @Test
@@ -141,6 +144,7 @@ public class ValuesParseTest {
         Value expected = complex(pair(text("key1"), text("val1")), pair(text("key2"), text("val2")));
         assertEquals(expected, parse("{key1:val1,key2:val2}"));
         assertEquals(expected, parse("  { key1 : val1 , key2 : val2 }  "));
+        assertEquals(expected, parse("{\r\n\tkey1: val1\r\n\tkey2: val2\r\n}"));
     }
 
     @Test
@@ -148,6 +152,7 @@ public class ValuesParseTest {
         Value expected = list(text("val1"), text("val2"));
         assertEquals(expected, parse("{val1,val2}"));
         assertEquals(expected, parse("  { val1 , val2 }  "));
+        assertEquals(expected, parse("{\r\n\tval1\r\n\tval2\r\n}"));
     }
 
     @Test
@@ -155,6 +160,7 @@ public class ValuesParseTest {
         Value expected = complex(text("tag"), text("val"));
         assertEquals(expected, parse("tag val"));
         assertEquals(expected, parse("  tag  val  "));
+        assertEquals(expected, parse("\t\r\n\ttag\tval\r\n\t"));
         assertEquals(expected, parse("{tag:val}"));
     }
 

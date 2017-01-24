@@ -5,6 +5,7 @@ import static styx.data.Values.number;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
+import java.util.List;
 
 import styx.data.Binary;
 import styx.data.Complex;
@@ -18,11 +19,20 @@ import styx.data.WriteOption;
 public class Serializer {
 
     private final Writer writer;
-    private final boolean pretty;
+    private boolean pretty;
+    private boolean indent;
+    private int indentCur;
+    private int indentDelta;
 
     public Serializer(Writer writer, WriteOption[] options) {
+        List<WriteOption> optionsList = Arrays.asList(options);
         this.writer = writer;
-        this.pretty = Arrays.asList(options).contains(WriteOption.PRETTY);
+        this.pretty = optionsList.contains(WriteOption.PRETTY) || optionsList.contains(WriteOption.INDENT);
+        this.indent = optionsList.contains(WriteOption.INDENT);
+        if(indent) {
+            indentCur = 0;
+            indentDelta = 4;
+        }
     }
 
     public void serialize(Value value) throws IOException {
@@ -71,7 +81,8 @@ public class Serializer {
     }
 
     private void write(Binary value) throws IOException {
-        writer.write("0x");
+        writer.write('0');
+        writer.write('x');
         for(int index = 0; index < value.byteCount(); index++) {
             int unsignedByte = value.byteAt(index) & 0xFF;
             writer.write(FormatUtils.getHexChar(unsignedByte / 16));
@@ -80,7 +91,7 @@ public class Serializer {
     }
 
     private void write(Reference value) throws IOException {
-        writer.write("<");
+        writer.write('<');
         if(!value.parent().isPresent()) {
             writer.write('/');
         }
@@ -99,16 +110,24 @@ public class Serializer {
             write(pair.value());
         } else {
             writer.write('{');
-            if(pretty) {
-                writer.write(' ');
-            }
+            indentCur += indentDelta;
             boolean first = true;
             Numeric nextAutoKey = number(1);
             for(Pair pair : value) {
-                if(!first) {
-                    writer.write(',');
-                    if(pretty) {
+                if(first) {
+                    if(indent) {
+                        indent(indentCur);
+                    } else if(pretty) {
                         writer.write(' ');
+                    }
+                } else {
+                    if(indent) {
+                        indent(indentCur);
+                    } else if(pretty) {
+                        writer.write(',');
+                        writer.write(' ');
+                    } else {
+                        writer.write(',');
                     }
                 }
                 first = false;
@@ -116,7 +135,10 @@ public class Serializer {
                     if(pair.key().isComplex()) {
                         writer.write('@');
                     }
+                    boolean originalIndent = indent;
+                    indent = false;
                     write(pair.key());
+                    indent = originalIndent;
                     writer.write(':');
                     if(pretty) {
                         writer.write(' ');
@@ -127,10 +149,26 @@ public class Serializer {
                 }
                 write(pair.value());
             }
-            if(pretty && !first) {
-                writer.write(' ');
+            indentCur -= indentDelta;
+            if(first) {
+                if(pretty) {
+                    writer.write(' ');
+                }
+            } else {
+                if(indent) {
+                    indent(indentCur);
+                } else if(pretty) {
+                    writer.write(' ');
+                }
             }
             writer.write('}');
+        }
+    }
+
+    private void indent(int num) throws IOException {
+        writer.write('\n');
+        while(num-- > 0) {
+            writer.write(' ');
         }
     }
 }

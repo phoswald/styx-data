@@ -51,7 +51,7 @@ public class Parser {
             } else if(peek() == '@') {
                 skip();
                 values.add(readComplex());
-            } else if(eof() || peek() == ',' || peek() == '}') {
+            } else if(eof() || peek() == ',' || peek() == '\n' || peek() == '}') {
                 if(!values.isEmpty()) {
                     if(!hasKey) {
                         values.add(0, number(blocks.peek().nextAutoKey++));
@@ -103,7 +103,7 @@ public class Parser {
     }
 
     private void readWS() throws IOException {
-        while(peek() == ' ') {
+        while(peek() == ' ' || peek() == '\t' || peek() == '\r') {
             skip();
         }
     }
