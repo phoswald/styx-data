@@ -1,5 +1,5 @@
 package styx.data;
 
-public enum WriteOption {
+public enum GeneratorOption {
     PRETTY, INDENT
 }

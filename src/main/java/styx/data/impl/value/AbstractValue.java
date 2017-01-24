@@ -1,6 +1,6 @@
 package styx.data.impl.value;
 
-import static styx.data.Values.serialize;
+import static styx.data.Values.generate;
 
 import styx.data.Kind;
 import styx.data.Value;
@@ -9,7 +9,7 @@ abstract class AbstractValue implements Value {
 
     @Override
     public String toString() {
-        return serialize(this);
+        return generate(this);
     }
 
     @Override

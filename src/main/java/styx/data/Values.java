@@ -20,7 +20,7 @@ import java.util.Collection;
 import java.util.Map;
 
 import styx.data.impl.Parser;
-import styx.data.impl.Serializer;
+import styx.data.impl.Generator;
 import styx.data.impl.value.AbstractNumeric;
 import styx.data.impl.value.BinaryTreeComplex;
 import styx.data.impl.value.ByteArrayBinary;
@@ -101,30 +101,30 @@ public class Values {
     }
 
     public static Value parse(String input) {
-        return read(new StringReader(input));
+        return parse(new StringReader(input));
     }
 
-    public static Value read(Path path) {
-        return read(path, CHARSET);
+    public static Value parse(Path path) {
+        return parse(path, CHARSET);
     }
 
-    public static Value read(Path path, Charset charset) {
+    public static Value parse(Path path, Charset charset) {
         try {
-            return read(Files.newBufferedReader(path, charset));
+            return parse(Files.newBufferedReader(path, charset));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
-    public static Value read(InputStream stream) {
-        return read(stream, CHARSET);
+    public static Value parse(InputStream stream) {
+        return parse(stream, CHARSET);
     }
 
-    public static Value read(InputStream stream, Charset charset) {
-        return read(new BufferedReader(new InputStreamReader(stream, charset)));
+    public static Value parse(InputStream stream, Charset charset) {
+        return parse(new BufferedReader(new InputStreamReader(stream, charset)));
     }
 
-    public static Value read(Reader reader) {
+    public static Value parse(Reader reader) {
         try {
             return new Parser(reader).parse();
         } catch (IOException e) {
@@ -132,35 +132,35 @@ public class Values {
         }
     }
 
-    public static String serialize(Value value, WriteOption... options) {
+    public static String generate(Value value, GeneratorOption... options) {
         StringWriter writer = new StringWriter();
-        write(writer, value, options);
+        generate(value, writer, options);
         return writer.toString();
     }
 
-    public static void write(Path path, Value value, WriteOption... options) {
-        write(path, value, CHARSET, options);
+    public static void generate(Value value, Path path, GeneratorOption... options) {
+        generate(value, path, CHARSET, options);
     }
 
-    public static void write(Path path, Value value, Charset charset, WriteOption... options) {
+    public static void generate(Value value, Path path, Charset charset, GeneratorOption... options) {
         try {
-            write(Files.newBufferedWriter(path, charset), value, options);
+            generate(value, Files.newBufferedWriter(path, charset), options);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
-    public static void write(OutputStream stream, Value value, WriteOption... options) {
-        write(stream, value, CHARSET, options);
+    public static void generate(Value value, OutputStream stream, GeneratorOption... options) {
+        generate(value, stream, CHARSET, options);
     }
 
-    public static void write(OutputStream stream, Value value, Charset charset, WriteOption... options) {
-        write(new BufferedWriter(new OutputStreamWriter(stream, charset)), value, options);
+    public static void generate(Value value, OutputStream stream, Charset charset, GeneratorOption... options) {
+        generate(value, new BufferedWriter(new OutputStreamWriter(stream, charset)), options);
     }
 
-    public static void write(Writer writer, Value value, WriteOption... options) {
+    public static void generate(Value value, Writer writer, GeneratorOption... options) {
         try {
-            new Serializer(writer, options).serialize(value);
+            new Generator(writer, options).serialize(value);
             writer.flush();
         } catch (IOException e) {
             throw new UncheckedIOException(e);

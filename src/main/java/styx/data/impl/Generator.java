@@ -14,9 +14,9 @@ import styx.data.Pair;
 import styx.data.Reference;
 import styx.data.Text;
 import styx.data.Value;
-import styx.data.WriteOption;
+import styx.data.GeneratorOption;
 
-public class Serializer {
+public class Generator {
 
     private final Writer writer;
     private boolean pretty;
@@ -24,11 +24,11 @@ public class Serializer {
     private int indentCur;
     private int indentDelta;
 
-    public Serializer(Writer writer, WriteOption[] options) {
-        List<WriteOption> optionsList = Arrays.asList(options);
+    public Generator(Writer writer, GeneratorOption[] options) {
+        List<GeneratorOption> optionsList = Arrays.asList(options);
         this.writer = writer;
-        this.pretty = optionsList.contains(WriteOption.PRETTY) || optionsList.contains(WriteOption.INDENT);
-        this.indent = optionsList.contains(WriteOption.INDENT);
+        this.pretty = optionsList.contains(GeneratorOption.PRETTY) || optionsList.contains(GeneratorOption.INDENT);
+        this.indent = optionsList.contains(GeneratorOption.INDENT);
         if(indent) {
             indentCur = 0;
             indentDelta = 4;

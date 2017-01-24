@@ -10,16 +10,36 @@ import static styx.data.Values.parse;
 import static styx.data.Values.reference;
 import static styx.data.Values.text;
 
+import java.io.ByteArrayInputStream;
+import java.io.StringReader;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
+
 import org.hamcrest.CoreMatchers;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-public class ValuesParseTest {
+public class ParserTest {
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
+
+    @Test
+    public void parse_valid_success() {
+        Value expected = complex(text("tag"), list(text("value1"), text("value2")));
+        assertEquals(expected, parse("tag { value1, value2 }"));
+        assertEquals(expected, parse(Paths.get("src/test/resources/valid.styx")));
+        assertEquals(expected, parse(new ByteArrayInputStream("tag { value1, value2 }".getBytes(StandardCharsets.UTF_8))));
+        assertEquals(expected, parse(new StringReader("tag { value1, value2 }")));
+    }
+
+    @Test(expected=UncheckedIOException.class)
+    public void parse_unexistingPath_success() {
+        parse(Paths.get("src/test/resources/unexisting.styx"));
+    }
 
     @Test
     public void parse_binaryInteger_success() {
