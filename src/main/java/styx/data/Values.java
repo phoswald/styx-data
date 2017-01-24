@@ -19,14 +19,14 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Map;
 
-import styx.data.impl.AbstractNumeric;
-import styx.data.impl.BinaryTreeComplex;
-import styx.data.impl.ByteArrayBinary;
-import styx.data.impl.DefaultPair;
-import styx.data.impl.LinkedListReference;
 import styx.data.impl.Parser;
 import styx.data.impl.Serializer;
-import styx.data.impl.StringText;
+import styx.data.impl.value.AbstractNumeric;
+import styx.data.impl.value.BinaryTreeComplex;
+import styx.data.impl.value.ByteArrayBinary;
+import styx.data.impl.value.DefaultPair;
+import styx.data.impl.value.LinkedListReference;
+import styx.data.impl.value.StringText;
 
 public class Values {
 

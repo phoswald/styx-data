@@ -1,4 +1,4 @@
-package styx.data.impl;
+package styx.data.impl.value;
 
 import styx.data.Kind;
 import styx.data.Numeric;

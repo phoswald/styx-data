@@ -1,4 +1,4 @@
-package styx.data.impl;
+package styx.data.impl.value;
 
 class DoubleNumeric extends AbstractNumeric {
 

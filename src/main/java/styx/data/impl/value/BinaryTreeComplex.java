@@ -1,4 +1,4 @@
-package styx.data.impl;
+package styx.data.impl.value;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
