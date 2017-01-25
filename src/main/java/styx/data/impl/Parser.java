@@ -38,28 +38,29 @@ public class Parser {
     }
 
     private void parse(Handler handler) throws IOException {
-        boolean hasKey = false;
-        List<Value> values = new ArrayList<>();
-        stack.push();
-        int topStackSize = stack.size();
+        boolean lineHasKey = false;
+        List<Value> lineValues = new ArrayList<>();
+        boolean isParsingNested = stack.size() > 0;
+        Block top = stack.push();
         while(true) {
+            boolean isAtTop = (stack.peek() == top);
             readWS();
             Value next = readSimple();
             if(next != null) {
-                values.add(next);
-            } else if(peek() == '@' && stack.size() > topStackSize) {
+                lineValues.add(next);
+            } else if(peek() == '@' && !isAtTop) {
                 skip();
-                values.add(readComplex());
-            } else if(eof() || (peek() == ',' && stack.size() > topStackSize) || peek() == '\n' || (peek() == '}' && stack.size() > topStackSize)) {
-                if(!values.isEmpty()) {
-                    if(!hasKey) {
-                        values.add(0, number(stack.peek().nextAutoKey++));
+                lineValues.add(readComplex());
+            } else if(eof() || peek() == '\n' || (peek() == ',' && !isAtTop) || (peek() == '}' && !isAtTop)) {
+                if(!lineValues.isEmpty()) {
+                    if(!lineHasKey) {
+                        lineValues.add(0, number(stack.peek().nextAutoKey++));
                     }
-                    for(int i = 0; i < values.size()-2; i++) {
-                        handler.open(values.get(i));
+                    for(int i = 0; i < lineValues.size()-2; i++) {
+                        handler.open(lineValues.get(i));
                     }
-                    handler.value(values.get(values.size()-2), values.get(values.size()-1));
-                    for(int i = 0; i < values.size()-2; i++) {
+                    handler.value(lineValues.get(lineValues.size()-2), lineValues.get(lineValues.size()-1));
+                    for(int i = 0; i < lineValues.size()-2; i++) {
                         handler.close();
                     }
                     stack.peek().elementCount++;
@@ -72,28 +73,28 @@ public class Parser {
                     }
                     stack.pop();
                     stack.peek().elementCount++;
-                    if(topStackSize > 1 && stack.size() == topStackSize) {
+                    if(isParsingNested && stack.peek() == top) {
                         stack.pop();
                         skip();
                         return;
                     }
                 }
-                hasKey = false;
-                values.clear();
+                lineHasKey = false;
+                lineValues.clear();
                 skip();
             } else if(peek() == '{') {
-                if(!hasKey) {
-                    values.add(0, number(stack.peek().nextAutoKey++));
+                if(!lineHasKey) {
+                    lineValues.add(0, number(stack.peek().nextAutoKey++));
                 }
-                for(int i=0; i<values.size(); i++) {
-                    handler.open(values.get(i));
+                for(int i=0; i<lineValues.size(); i++) {
+                    handler.open(lineValues.get(i));
                 }
-                stack.push().levelCount = values.size();
-                hasKey = false;
-                values.clear();
+                stack.push().levelCount = lineValues.size();
+                lineHasKey = false;
+                lineValues.clear();
                 skip();
-            } else if(peek() == ':' && stack.size() > topStackSize && !hasKey && values.size() == 1) {
-                hasKey = true;
+            } else if(peek() == ':' && !isAtTop && !lineHasKey && lineValues.size() == 1) {
+                lineHasKey = true;
                 skip();
             } else {
                 throw new ParserException("Unexpected token '" + peek() + "'.");
