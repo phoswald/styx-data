@@ -19,8 +19,8 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Map;
 
-import styx.data.impl.Parser;
 import styx.data.impl.Generator;
+import styx.data.impl.Parser;
 import styx.data.impl.value.AbstractNumeric;
 import styx.data.impl.value.BinaryTreeComplex;
 import styx.data.impl.value.ByteArrayBinary;
@@ -160,7 +160,7 @@ public class Values {
 
     public static void generate(Value value, Writer writer, GeneratorOption... options) {
         try {
-            new Generator(writer, options).serialize(value);
+            new Generator(writer, options).generate(value);
             writer.flush();
         } catch (IOException e) {
             throw new UncheckedIOException(e);

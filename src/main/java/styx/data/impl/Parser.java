@@ -21,6 +21,7 @@ import styx.data.Value;
 public class Parser {
 
     private final Reader reader;
+    private final FastStack<Block> stack = new FastStack<>(Block::new, Block::init);
     private char current;
     private char next;
 
@@ -32,29 +33,27 @@ public class Parser {
 
     public Value parse() throws IOException {
         CollectingHandler handler = new CollectingHandler();
-        parse(handler, false);
+        parse(handler);
         return handler.collect();
     }
 
-    public void parse(Handler handler, boolean isKey) throws IOException {
+    private void parse(Handler handler) throws IOException {
         boolean hasKey = false;
-        boolean hasStuff = false;
         List<Value> values = new ArrayList<>();
-        FastStack<Block> blocks = new FastStack<>(Block::new, Block::init);
-        blocks.push();
+        stack.push();
+        int topStackSize = stack.size();
         while(true) {
             readWS();
             Value next = readSimple();
             if(next != null) {
-                hasStuff = true;
                 values.add(next);
-            } else if(peek() == '@') {
+            } else if(peek() == '@' && stack.size() > topStackSize) {
                 skip();
                 values.add(readComplex());
-            } else if(eof() || peek() == ',' || peek() == '\n' || peek() == '}') {
+            } else if(eof() || (peek() == ',' && stack.size() > topStackSize) || peek() == '\n' || (peek() == '}' && stack.size() > topStackSize)) {
                 if(!values.isEmpty()) {
                     if(!hasKey) {
-                        values.add(0, number(blocks.peek().nextAutoKey++));
+                        values.add(0, number(stack.peek().nextAutoKey++));
                     }
                     for(int i = 0; i < values.size()-2; i++) {
                         handler.open(values.get(i));
@@ -63,41 +62,44 @@ public class Parser {
                     for(int i = 0; i < values.size()-2; i++) {
                         handler.close();
                     }
+                    stack.peek().elementCount++;
                 }
                 if(eof()) {
                     break;
                 } else if(peek() == '}') {
-                    for(int i = 0; i < blocks.peek().levelCount; i++) {
+                    for(int i = 0; i < stack.peek().levelCount; i++) {
                         handler.close();
                     }
-                    blocks.pop();
+                    stack.pop();
+                    stack.peek().elementCount++;
+                    if(topStackSize > 1 && stack.size() == topStackSize) {
+                        stack.pop();
+                        skip();
+                        return;
+                    }
                 }
                 hasKey = false;
-                hasStuff = true;
                 values.clear();
                 skip();
             } else if(peek() == '{') {
                 if(!hasKey) {
-                    values.add(0, number(blocks.peek().nextAutoKey++));
+                    values.add(0, number(stack.peek().nextAutoKey++));
                 }
                 for(int i=0; i<values.size(); i++) {
                     handler.open(values.get(i));
                 }
-                blocks.push().levelCount = values.size();
+                stack.push().levelCount = values.size();
                 hasKey = false;
-                hasStuff = false;
                 values.clear();
                 skip();
-            } else if(peek() == ':' && blocks.size() > 1 && !hasKey && values.size() == 1) {
+            } else if(peek() == ':' && stack.size() > topStackSize && !hasKey && values.size() == 1) {
                 hasKey = true;
                 skip();
-            } else if(peek() == ':' && isKey) {
-                return; // TODO: make this more robust and more efficient
             } else {
                 throw new ParserException("Unexpected token '" + peek() + "'.");
             }
         }
-        if(!hasStuff || blocks.size() > 1) {
+        if(stack.size() > 1 || stack.peek().elementCount == 0) {
             throw new ParserException("Unexpected EOF.");
         }
     }
@@ -202,8 +204,12 @@ public class Parser {
     }
 
     private Value readComplex() throws IOException {
+        readWS();
+        if(peek() != '{') {
+            throw new ParserException("Invalid complex key: '{' expected.");
+        }
         CollectingHandler handler = new CollectingHandler();
-        parse(handler, true);
+        parse(handler);
         return handler.collect();
     }
 
@@ -232,9 +238,11 @@ public class Parser {
     }
 
     private static class Block {
+        private int elementCount;
         private int levelCount;
         private int nextAutoKey;
         private void init() {
+            elementCount = 0;
             levelCount = 0;
             nextAutoKey = 1;
         }

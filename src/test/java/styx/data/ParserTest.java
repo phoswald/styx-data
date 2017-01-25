@@ -224,6 +224,20 @@ public class ParserTest {
     }
 
     @Test
+    public void parse_complexComplexKey2_success() {
+        Value expected = complex(list(list(text("val1"), text("val2"))), list());
+        assertEquals(expected, parse("{@{{val1,val2}}:{}}"));
+        assertEquals(expected, parse(" { @ { { val1 , val2 } } : { } } "));
+    }
+
+    @Test
+    public void parse_complexComplexKey3_success() {
+        Value expected = complex(complex(complex(), text("val1")), text("val2"));
+        assertEquals(expected, parse("{@{@{}:val1}:val2}"));
+        assertEquals(expected, parse("{ @ { @ { } : val1 } : val2 } "));
+    }
+
+    @Test
     public void parse_complexNotClosed_exception() {
         exception.expect(ParserException.class);
         exception.expectMessage(CoreMatchers.equalTo("Unexpected EOF."));
@@ -260,6 +274,13 @@ public class ParserTest {
     }
 
     @Test
+    public void parse_complexInvalidComplexKey_exception() {
+        exception.expect(ParserException.class);
+        exception.expectMessage(CoreMatchers.equalTo("Invalid complex key: '{' expected."));
+        parse(" { @ key : val } ");
+    }
+
+    @Test
     public void parse_topLevelEmpty_exception() {
         exception.expect(ParserException.class);
         exception.expectMessage(CoreMatchers.equalTo("Unexpected EOF."));
@@ -278,5 +299,26 @@ public class ParserTest {
         exception.expect(ParserException.class);
         exception.expectMessage(CoreMatchers.equalTo("Unexpected token ':'."));
         parse(" key : value ");
+    }
+
+    @Test
+    public void parse_topLevelComma_exception() {
+        exception.expect(ParserException.class);
+        exception.expectMessage(CoreMatchers.equalTo("Unexpected token ','."));
+        parse(" value , ");
+    }
+
+    @Test
+    public void parse_topLevelClose_exception() {
+        exception.expect(ParserException.class);
+        exception.expectMessage(CoreMatchers.equalTo("Unexpected token '}'."));
+        parse(" value } ");
+    }
+
+    @Test
+    public void parse_topLevelAt_exception() {
+        exception.expect(ParserException.class);
+        exception.expectMessage(CoreMatchers.equalTo("Unexpected token '@'."));
+        parse(" @ { } ");
     }
 }

@@ -9,12 +9,12 @@ import java.util.List;
 
 import styx.data.Binary;
 import styx.data.Complex;
+import styx.data.GeneratorOption;
 import styx.data.Numeric;
 import styx.data.Pair;
 import styx.data.Reference;
 import styx.data.Text;
 import styx.data.Value;
-import styx.data.GeneratorOption;
 
 public class Generator {
 
@@ -35,7 +35,7 @@ public class Generator {
         }
     }
 
-    public void serialize(Value value) throws IOException {
+    public void generate(Value value) throws IOException {
         write(value);
     }
 
@@ -114,21 +114,13 @@ public class Generator {
             boolean first = true;
             Numeric nextAutoKey = number(1);
             for(Pair pair : value) {
-                if(first) {
-                    if(indent) {
-                        indent(indentCur);
-                    } else if(pretty) {
-                        writer.write(' ');
-                    }
-                } else {
-                    if(indent) {
-                        indent(indentCur);
-                    } else if(pretty) {
-                        writer.write(',');
-                        writer.write(' ');
-                    } else {
-                        writer.write(',');
-                    }
+                if(!first && !indent) {
+                    writer.write(',');
+                }
+                if(indent) {
+                    indent(indentCur);
+                } else if(pretty) {
+                    writer.write(' ');
                 }
                 first = false;
                 if(pair.key().compareTo(nextAutoKey) != 0) {
@@ -150,16 +142,10 @@ public class Generator {
                 write(pair.value());
             }
             indentCur -= indentDelta;
-            if(first) {
-                if(pretty) {
-                    writer.write(' ');
-                }
-            } else {
-                if(indent) {
-                    indent(indentCur);
-                } else if(pretty) {
-                    writer.write(' ');
-                }
+            if(!first && indent) {
+                indent(indentCur);
+            } else if(pretty) {
+                writer.write(' ');
             }
             writer.write('}');
         }
