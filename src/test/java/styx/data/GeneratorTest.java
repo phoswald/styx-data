@@ -93,6 +93,14 @@ public class GeneratorTest {
     }
 
     @Test
+    public void generate_complexListOfFractions_success() throws IOException {
+        Value value = complex(pair(number(2), text("val2")), pair(number(2.5), text("val2.5")), pair(number(3), text("val3")));
+        assertEquals("{2:val2,2.5:\"val2.5\",val3}", generate(value));
+        assertEquals("{ 2: val2, 2.5: \"val2.5\", val3 }", generate(value, GeneratorOption.PRETTY));
+        assertEquals("{\n    2: val2\n    2.5: \"val2.5\"\n    val3\n}", generate(value, GeneratorOption.INDENT));
+    }
+
+    @Test
     public void generate_complexTag_success() throws IOException {
         Value value = complex(text("tag"), list(text("val1"), text("val2")));
         assertEquals("{tag:{val1,val2}}", generate(value));

@@ -14,9 +14,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import styx.data.Pair;
-import styx.data.ParserException;
 import styx.data.Reference;
 import styx.data.Value;
+import styx.data.exception.ParserException;
 
 public class Parser {
 
@@ -94,6 +94,9 @@ public class Parser {
                 lineValues.clear();
                 skip();
             } else if(peek() == ':' && !isAtTop && !lineHasKey && lineValues.size() == 1) {
+                if(lineValues.get(0).isNumeric() && lineValues.get(0).asNumeric().isInteger()) {
+                    stack.peek().nextAutoKey = lineValues.get(0).asNumeric().toInteger() + 1;
+                }
                 lineHasKey = true;
                 skip();
             } else {
@@ -158,19 +161,38 @@ public class Parser {
                 if(FormatUtils.isHexChar(peek())) {
                     throw new ParserException("Invalid binary value: even number of digits expected.");
                 }
+                if(FormatUtils.isIdentifierChar(peek())) {
+                    throw new ParserException("Invalid binary value: unexpected token '" + peek() + "'.");
+                }
                 return binary(bytes.toByteArray());
             }
             if(FormatUtils.isDigit(peek()) || peek() == '-') {
-                // TODO: support fractional numbers and exponential notation
                 StringBuilder sb = new StringBuilder();
                 sb.append(read());
                 while(FormatUtils.isDigit(peek())) {
                     sb.append(read());
                 }
+                if(peek() == '.') {
+                    sb.append(read());
+                    while(FormatUtils.isDigit(peek())) {
+                        sb.append(read());
+                    }
+                }
+                if(peek() == 'E') {
+                    sb.append(read());
+                    if(peek() == '-') {
+                        sb.append(read());
+                    }
+                    while(FormatUtils.isDigit(peek())) {
+                        sb.append(read());
+                    }
+                }
+                if(FormatUtils.isIdentifierChar(peek()) || peek() == '-' || peek() == '.') {
+                    throw new ParserException("Invalid numeric value: unexpected token '" + peek() + "'.");
+                }
                 return number(Double.valueOf(sb.toString()));
             }
             if(peek() == '<') {
-                // TODO: support complex reference values
                 skip();
                 if(peek() == '/') {
                     skip();
@@ -183,6 +205,9 @@ public class Parser {
                 } else {
                     while(true) {
                         Value child = readSimple();
+                        if(child == null && peek() == '{') {
+                            child = readComplex();
+                        }
                         if(child == null) {
                             throw new ParserException("Invalid reference: part or '>' expected.");
                         }

@@ -1,6 +1,7 @@
 package styx.data;
 
 import static org.junit.Assert.assertEquals;
+import static styx.data.AssertUtils.assertException;
 import static styx.data.Values.binary;
 import static styx.data.Values.complex;
 import static styx.data.Values.list;
@@ -16,16 +17,11 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 
-import org.hamcrest.CoreMatchers;
-import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
+
+import styx.data.exception.ParserException;
 
 public class ParserTest {
-
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     @Test
     public void parse_valid_success() {
@@ -42,11 +38,35 @@ public class ParserTest {
     }
 
     @Test
-    public void parse_binaryInteger_success() {
+    public void parse_numberInteger_success() {
         assertEquals(number(0), parse("0"));
         assertEquals(number(0), parse("  0  "));
         assertEquals(number(1234), parse("  1234  "));
         assertEquals(number(-1234), parse("  -1234  "));
+    }
+
+    @Test
+    public void parse_numberFractional_success() {
+        assertEquals(number(0), parse("0.0"));
+        assertEquals(number(0.1), parse("  0.1  "));
+        assertEquals(number(1234.56789), parse("  001234.5678900  "));
+        assertEquals(number(-1234.56789), parse("  -001234.5678900  "));
+    }
+
+    @Test
+    public void parse_numberExponential_success() {
+        assertEquals(number(1000), parse("1E3"));
+        assertEquals(number(0.001), parse("  1E-3  "));
+        assertEquals(number(1234.56789), parse("  0012.345678900E2  "));
+        assertEquals(number(-0.123456789), parse("  -0012.345678900E-2  "));
+    }
+
+    @Test
+    public void parse_numberBadChars_exception() {
+        assertException(ParserException.class, "Invalid numeric value: unexpected token 'X'.", () -> parse(" 1234X "));
+        assertException(ParserException.class, "Invalid numeric value: unexpected token '-'.", () -> parse(" -12-34 "));
+        assertException(ParserException.class, "Invalid numeric value: unexpected token '.'.", () -> parse(" 12.34.56 "));
+        assertException(ParserException.class, "Invalid numeric value: unexpected token 'E'.", () -> parse(" 1E5E7 "));
     }
 
     @Test
@@ -60,23 +80,13 @@ public class ParserTest {
 
     @Test
     public void parse_textQuotedNotClosed_exception() {
-        exception.expect(ParserException.class);
-        exception.expectMessage(CoreMatchers.equalTo("Invalid textual value: closing '\"' expected."));
-        parse("\"");
+        assertException(ParserException.class, "Invalid textual value: closing '\"' expected.", () -> parse("\""));
     }
 
     @Test
     public void parse_textQuotedInvalidEsacape_exception() {
-        exception.expect(ParserException.class);
-        exception.expectMessage(CoreMatchers.equalTo("Invalid textual value: invalid escape sequence '\\a'."));
-        parse("\"\\a\"");
-    }
-
-    @Test
-    public void parse_textQuotedInvalidEsacape2_exception() {
-        exception.expect(ParserException.class);
-        exception.expectMessage(CoreMatchers.equalTo("Invalid textual value: closing '\"' expected."));
-        parse("\"\\");
+        assertException(ParserException.class, "Invalid textual value: invalid escape sequence '\\a'.", () -> parse("\"\\a\""));
+        assertException(ParserException.class, "Invalid textual value: closing '\"' expected.", () -> parse("\"\\"));
     }
 
     @Test
@@ -96,10 +106,9 @@ public class ParserTest {
     }
 
     @Test
-    public void parse_binaryOddDigits_exception() {
-        exception.expect(ParserException.class);
-        exception.expectMessage(CoreMatchers.equalTo("Invalid binary value: even number of digits expected."));
-        parse("  0x0  ");
+    public void parse_binaryInvalid_exception() {
+        assertException(ParserException.class, "Invalid binary value: even number of digits expected.", () -> parse("  0x0  "));
+        assertException(ParserException.class, "Invalid binary value: unexpected token 'a'.", () -> parse("  0xDEad  "));
     }
 
     @Test
@@ -107,48 +116,23 @@ public class ParserTest {
         assertEquals(reference(), parse("</>"));
         assertEquals(reference(text("part1")), parse("</part1>"));
         assertEquals(reference(text("part1"), text("part2")), parse("</part1/part2>"));
+        assertEquals(reference(number(1), number(2), number(3)), parse("</1/2/3>"));
+        assertEquals(reference(reference(), reference(text("val"))), parse("</</>/</val>>"));
+        assertEquals(reference(list(), list(text("val"))), parse("</{}/{val}>"));
     }
 
     @Test
-    public void parse_referenceBadToken1_exception() {
-        exception.expect(ParserException.class);
-        exception.expectMessage(CoreMatchers.equalTo("Invalid reference: '/' expected."));
-        parse("<,");
+    public void parse_referenceNotClosed_exception() {
+        assertException(ParserException.class, "Invalid reference: '/' expected.", () -> parse("<"));
+        assertException(ParserException.class, "Invalid reference: part or '>' expected.", () -> parse("</"));
+        assertException(ParserException.class, "Invalid reference: '/' or '>' expected.", () -> parse("</part"));
     }
 
     @Test
-    public void parse_referenceBadToken2_exception() {
-        exception.expect(ParserException.class);
-        exception.expectMessage(CoreMatchers.equalTo("Invalid reference: part or '>' expected."));
-        parse("</,");
-    }
-
-    @Test
-    public void parse_referenceBadToken3_exception() {
-        exception.expect(ParserException.class);
-        exception.expectMessage(CoreMatchers.equalTo("Invalid reference: '/' or '>' expected."));
-        parse("</part,");
-    }
-
-    @Test
-    public void parse_referenceNotClosed1_exception() {
-        exception.expect(ParserException.class);
-        exception.expectMessage(CoreMatchers.equalTo("Invalid reference: '/' expected."));
-        parse("<");
-    }
-
-    @Test
-    public void parse_referenceNotClosed2_exception() {
-        exception.expect(ParserException.class);
-        exception.expectMessage(CoreMatchers.equalTo("Invalid reference: part or '>' expected."));
-        parse("</");
-    }
-
-    @Test
-    public void parse_referenceNotClosed3_exception() {
-        exception.expect(ParserException.class);
-        exception.expectMessage(CoreMatchers.equalTo("Invalid reference: '/' or '>' expected."));
-        parse("</part");
+    public void parse_referenceBadToken_exception() {
+        assertException(ParserException.class, "Invalid reference: '/' expected.", () -> parse("<,"));
+        assertException(ParserException.class, "Invalid reference: part or '>' expected.", () -> parse("</,"));
+        assertException(ParserException.class, "Invalid reference: '/' or '>' expected.", () -> parse("</part,"));
     }
 
     @Test
@@ -173,6 +157,14 @@ public class ParserTest {
         assertEquals(expected, parse("{val1,val2}"));
         assertEquals(expected, parse("  { val1 , val2 }  "));
         assertEquals(expected, parse("{\r\n\tval1\r\n\tval2\r\n}"));
+    }
+
+    @Test
+    public void parse_complexListOfFractions_success() {
+        Value expected = complex(pair(number(2), text("val2")), pair(number(2.5), text("val2.5")), pair(number(3), text("val3")));
+        assertEquals(expected, parse("{2:val2,2.5:\"val2.5\",val3}"));
+        assertEquals(expected, parse("  { 2: val2, 2.5: \"val2.5\", val3 }  "));
+        assertEquals(expected, parse("{\n    2: val2\n    2.5: \"val2.5\"\n    val3\n}"));
     }
 
     @Test
@@ -239,86 +231,30 @@ public class ParserTest {
 
     @Test
     public void parse_complexNotClosed_exception() {
-        exception.expect(ParserException.class);
-        exception.expectMessage(CoreMatchers.equalTo("Unexpected EOF."));
-        parse(" { key ");
+        assertException(ParserException.class, "Unexpected EOF.", () -> parse(" { key "));
     }
 
     @Test
-    public void parse_complexInvalidColon_exception() {
-        exception.expect(ParserException.class);
-        exception.expectMessage(CoreMatchers.equalTo("Unexpected token ':'."));
-        parse(" { key : :  value  }  ");
-    }
-
-    @Test
-    public void parse_complexInvalidColon2_exception() {
-        exception.expect(ParserException.class);
-        exception.expectMessage(CoreMatchers.equalTo("Unexpected token ':'."));
-        parse(" { key  key2  :  value  }  ");
-    }
-
-    @Test
-    public void parse_complexInvalidColon3_exception() {
-        exception.expect(ParserException.class);
-        exception.expectMessage(CoreMatchers.equalTo("Unexpected token ':'."));
-        parse(" {  :  value  }  ");
-    }
-
-    @Ignore
-    @Test
-    public void parse_complexInvalidComma_exception() {
-        exception.expect(ParserException.class);
-        exception.expectMessage(CoreMatchers.equalTo("Unexpected token ','."));
-        parse(" {  key ,  ,  }  ");
-    }
-
-    @Test
-    public void parse_complexInvalidComplexKey_exception() {
-        exception.expect(ParserException.class);
-        exception.expectMessage(CoreMatchers.equalTo("Invalid complex key: '{' expected."));
-        parse(" { @ key : val } ");
+    public void parse_complexInvalid_exception() {
+        assertException(ParserException.class, "Unexpected token ':'.", () -> parse(" { key : :  value  }  "));
+        assertException(ParserException.class, "Unexpected token ':'.", () -> parse(" { key  key2  :  value  }  "));
+        assertException(ParserException.class, "Unexpected token ':'.", () -> parse(" {  :  value  }  "));
+//      assertException(ParserException.class, "Unexpected token ','.", () -> parse(" {  key ,  ,  }  "));
+        assertException(ParserException.class, "Invalid complex key: '{' expected.", () -> parse(" { @ key : val } "));
+        assertException(ParserException.class, "Invalid complex key: '{' expected.", () -> parse(" { @ : val } "));
     }
 
     @Test
     public void parse_topLevelEmpty_exception() {
-        exception.expect(ParserException.class);
-        exception.expectMessage(CoreMatchers.equalTo("Unexpected EOF."));
-        parse("  ");
+        assertException(ParserException.class, "Unexpected EOF.", () -> parse("  "));
     }
 
     @Test
-    public void parse_topLevelBadToken_exception() {
-        exception.expect(ParserException.class);
-        exception.expectMessage(CoreMatchers.equalTo("Unexpected token '~'."));
-        parse(" ~ ");
-    }
-
-    @Test
-    public void parse_topLevelPair_exception() {
-        exception.expect(ParserException.class);
-        exception.expectMessage(CoreMatchers.equalTo("Unexpected token ':'."));
-        parse(" key : value ");
-    }
-
-    @Test
-    public void parse_topLevelComma_exception() {
-        exception.expect(ParserException.class);
-        exception.expectMessage(CoreMatchers.equalTo("Unexpected token ','."));
-        parse(" value , ");
-    }
-
-    @Test
-    public void parse_topLevelClose_exception() {
-        exception.expect(ParserException.class);
-        exception.expectMessage(CoreMatchers.equalTo("Unexpected token '}'."));
-        parse(" value } ");
-    }
-
-    @Test
-    public void parse_topLevelAt_exception() {
-        exception.expect(ParserException.class);
-        exception.expectMessage(CoreMatchers.equalTo("Unexpected token '@'."));
-        parse(" @ { } ");
+    public void parse_topLevelInvalid_exception() {
+        assertException(ParserException.class, "Unexpected token '~'.", () -> parse(" ~ "));
+        assertException(ParserException.class, "Unexpected token ':'.", () -> parse(" key : value "));
+        assertException(ParserException.class, "Unexpected token ','.", () -> parse(" value , "));
+        assertException(ParserException.class, "Unexpected token '}'.", () -> parse(" value } "));
+        assertException(ParserException.class, "Unexpected token '@'.", () -> parse(" @ { } "));
     }
 }

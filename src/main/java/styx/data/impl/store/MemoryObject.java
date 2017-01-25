@@ -5,8 +5,8 @@ import java.util.Map;
 import java.util.Objects;
 
 import styx.data.Complex;
-import styx.data.StyxException;
 import styx.data.Value;
+import styx.data.exception.InvalidWriteException;
 
 /**
  * A mutable object, identified by a reference.
@@ -116,7 +116,7 @@ class MemoryObject {
         // clear FLAG_MODIFIED from children and FLAG_CHILD from this object.
         if((flags & FLAG_CHILD) != 0) {
             if(value == null || !value.isComplex()) {
-                throw new StyxException(); // invalid: previous write to non-existing child.
+                throw new IllegalStateException(); // should not happen: previous write to non-existing child.
             }
             Complex valc = value.asComplex(); // never called for non-complex values.
             for(MemoryObject child : children.values()) {
@@ -135,7 +135,7 @@ class MemoryObject {
      * Writes (sets) the value of the object.
      *
      * @param value value for the object, null if to be removed.
-     * @throws StyxException if the parent is non-existing or non-complex.
+     * @throws InvalidWriteException if the parent is non-existing or non-complex.
      */
     void write(Value value) {
         // Writing is valid only if the parent is complex.
@@ -162,18 +162,18 @@ class MemoryObject {
     /**
      * Ensures that the object has a complex value.
      *
-     * @throws StyxException if the object does not have a value or a non-complex value.
+     * @throws InvalidWriteException if the object does not have a value or a non-complex value.
      */
-    private void ensureComplex() throws StyxException {
+    private void ensureComplex() {
         // If FLAG_PARENT is set, query the value from the parent and clear the flag.
         if((flags & FLAG_PARENT) != 0) {
             value = parent.getChild(key);
             flags &= ~FLAG_PARENT;
         }
         if(value == null) {
-            throw new StyxException("Attempt to write a child of a non-existing value.");
+            throw new InvalidWriteException("Attempt to write a child of a non-existing value.");
         } else if(!value.isComplex()) {
-            throw new StyxException("Attempt to write a child of a non-complex value.");
+            throw new InvalidWriteException("Attempt to write a child of a non-complex value.");
         }
     }
 

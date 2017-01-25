@@ -12,12 +12,19 @@ import org.hamcrest.CoreMatchers;
 
 class AssertUtils {
 
-    static void assertException(Class<?> expectedException, Runnable runnable) {
+    static void assertException(Class<?> exceptionType, Runnable runnable) {
+        assertException(exceptionType, null, runnable);
+    }
+
+    static void assertException(Class<?> exceptionType, String messageSubstring, Runnable runnable) {
         try {
             runnable.run();
-            fail("Expected " + expectedException.getName());
+            fail("Expected " + exceptionType.getName());
         } catch(RuntimeException e) {
-            assertThat(e, CoreMatchers.instanceOf(expectedException));
+            assertThat(e, CoreMatchers.instanceOf(exceptionType));
+            if(messageSubstring != null) {
+                assertThat(e.getMessage(), CoreMatchers.containsString(messageSubstring));
+            }
         }
     }
 

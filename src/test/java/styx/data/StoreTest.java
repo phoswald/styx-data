@@ -2,7 +2,7 @@ package styx.data;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static styx.data.AssertUtils.assertException;
 import static styx.data.Values.complex;
 import static styx.data.Values.empty;
 import static styx.data.Values.list;
@@ -14,6 +14,8 @@ import static styx.data.Values.root;
 import static styx.data.Values.text;
 
 import org.junit.Test;
+
+import styx.data.exception.InvalidWriteException;
 
 public class StoreTest {
 
@@ -44,7 +46,7 @@ public class StoreTest {
     }
 
     @Test
-    public void testWrite1() throws StyxException {
+    public void testWrite1() {
         try(Store store = Store.open()) {
             store.write(root(), null);
             assertNull(store.read(root()));
@@ -78,7 +80,7 @@ public class StoreTest {
     }
 
     @Test
-    public void testWrite2() throws StyxException {
+    public void testWrite2() {
         try(Store store = Store.open()) {
             store.write(root(), complex(
                     pair(text("v1"), text("v2")),
@@ -98,7 +100,7 @@ public class StoreTest {
     }
 
     @Test
-    public void testWrite3() throws StyxException {
+    public void testWrite3() {
         try(Store store = Store.open()) {
             store.write(root(), complex(
                     pair(text("v1"), text("v2")),
@@ -133,40 +135,28 @@ public class StoreTest {
     }
 
     @Test
-    public void testWriteSub1() throws StyxException {
+    public void testWriteSub1() {
         try(Store store = Store.open()) {
             store.write(root(), list(text("val1"), text("val2"), text("val3")));
-            try {
-                store.write(reference(text("x"), text("y"), text("z")), null);
-                fail();
-            } catch(StyxException e) {
-                assertEquals("Attempt to write a child of a non-existing value.", e.getMessage());
-            }
-            try {
-                store.write(reference(text("x"), text("y"), text("z")), empty());
-                fail();
-            } catch(StyxException e) {
-                assertEquals("Attempt to write a child of a non-existing value.", e.getMessage());
-            }
+
+            assertException(InvalidWriteException.class, "Attempt to write a child of a non-existing value.",
+                    () -> store.write(reference(text("x"), text("y"), text("z")), null));
+
+            assertException(InvalidWriteException.class, "Attempt to write a child of a non-existing value.",
+                    () -> store.write(reference(text("x"), text("y"), text("z")), empty()));
         }
     }
 
     @Test
-    public void testWriteSub2() throws StyxException {
+    public void testWriteSub2() {
         try(Store store = Store.open()) {
             store.write(root(), text("xxx"));
-            try {
-                store.write(reference(text("x"), text("y"), text("z")), null);
-                fail();
-            } catch(StyxException e) {
-                assertEquals("Attempt to write a child of a non-existing value.", e.getMessage());
-            }
-            try {
-                store.write(reference(text("x")), empty());
-                fail();
-            } catch(StyxException e) {
-                assertEquals("Attempt to write a child of a non-complex value.", e.getMessage());
-            }
+
+            assertException(InvalidWriteException.class, "Attempt to write a child of a non-existing value.",
+                    () -> store.write(reference(text("x"), text("y"), text("z")), null));
+
+            assertException(InvalidWriteException.class, "Attempt to write a child of a non-complex value.",
+                    () -> store.write(reference(text("x")), empty()));
         }
     }
 }
