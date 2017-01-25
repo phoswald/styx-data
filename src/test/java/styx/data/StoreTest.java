@@ -1,7 +1,12 @@
 package styx.data;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import static styx.data.AssertUtils.assertException;
 import static styx.data.Values.complex;
 import static styx.data.Values.empty;
@@ -13,6 +18,11 @@ import static styx.data.Values.reference;
 import static styx.data.Values.root;
 import static styx.data.Values.text;
 
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import org.junit.Test;
 
 import styx.data.exception.InvalidWriteException;
@@ -20,8 +30,45 @@ import styx.data.exception.InvalidWriteException;
 public class StoreTest {
 
     @Test
+    public void testOpenMemory() {
+        try(
+                Store unnamed1 = Store.memory();
+                Store unnamed2 = Store.memory();
+                Store namedA1 = Store.memory("A");
+                Store namedA2 = Store.memory("A");
+                Store namedB = Store.memory("B")) {
+            assertNotNull(unnamed1);
+            assertNotNull(unnamed2);
+            assertNotNull(namedA1);
+            assertNotNull(namedA2);
+            assertNotNull(namedB);
+            assertNotSame(unnamed1, unnamed2);
+            assertSame(namedA1, namedA2);
+            assertNotSame(namedA1, namedB);
+        }
+    }
+
+    @Test
+    public void testOpenFile() {
+        Path file = Paths.get("target/test/StoreTest/1.styx");
+        try(Store store = Store.file(file)) {
+            store.write(root(), list(text("hello")));
+        }
+        assertTrue(Files.exists(file));
+        try(Store store = Store.file(file)) {
+            store.write(root(), null);
+        }
+        assertFalse(Files.exists(file));
+        try(Store store = Store.file(file)) {
+            assertException(UncheckedIOException.class, "Failed to aquire lock for " + file, () -> Store.file(file));
+            store.write(root(), list(text("hello, world")));
+        }
+        assertTrue(Files.exists(file));
+    }
+
+    @Test
     public void testRead() {
-        try(Store store = Store.open()) {
+        try(Store store = Store.memory()) {
             assertNull(store.read(root()));
 
             store.write(root(), list(text("val1"), text("val2")));
@@ -47,7 +94,7 @@ public class StoreTest {
 
     @Test
     public void testWrite1() {
-        try(Store store = Store.open()) {
+        try(Store store = Store.memory()) {
             store.write(root(), null);
             assertNull(store.read(root()));
 
@@ -81,7 +128,7 @@ public class StoreTest {
 
     @Test
     public void testWrite2() {
-        try(Store store = Store.open()) {
+        try(Store store = Store.memory()) {
             store.write(root(), complex(
                     pair(text("v1"), text("v2")),
                     pair(text("v3"), text("v4")),
@@ -101,7 +148,7 @@ public class StoreTest {
 
     @Test
     public void testWrite3() {
-        try(Store store = Store.open()) {
+        try(Store store = Store.memory()) {
             store.write(root(), complex(
                     pair(text("v1"), text("v2")),
                     pair(text("v3"), text("v4")),
@@ -136,7 +183,7 @@ public class StoreTest {
 
     @Test
     public void testWriteSub1() {
-        try(Store store = Store.open()) {
+        try(Store store = Store.memory()) {
             store.write(root(), list(text("val1"), text("val2"), text("val3")));
 
             assertException(InvalidWriteException.class, "Attempt to write a child of a non-existing value.",
@@ -149,7 +196,7 @@ public class StoreTest {
 
     @Test
     public void testWriteSub2() {
-        try(Store store = Store.open()) {
+        try(Store store = Store.memory()) {
             store.write(root(), text("xxx"));
 
             assertException(InvalidWriteException.class, "Attempt to write a child of a non-existing value.",
