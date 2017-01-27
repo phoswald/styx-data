@@ -16,13 +16,17 @@ public class FileStore extends MemoryStore {
 
     private final Path file;
     private final Path lock;
+    private final Value initialValue;
 
     private FileStore(Path file) {
         this.file = file;
         this.lock = Paths.get(file.toString() + ".lock");
         run(() -> Files.createFile(lock), "Failed to aquire lock for " + file);
         if(Files.isRegularFile(file)) {
-            root.write(Values.parse(file));
+            initialValue = Values.parse(file);
+            root.write(initialValue);
+        } else {
+            initialValue = null;
         }
     }
 
@@ -35,10 +39,12 @@ public class FileStore extends MemoryStore {
     public void close() {
         try {
             Value value = root.read();
-            if(value != null) {
-                Values.generate(value, file, GeneratorOption.INDENT);
-            } else {
-                run(() -> Files.deleteIfExists(file), null);
+            if(value != initialValue) {
+                if(value != null) {
+                    Values.generate(value, file, GeneratorOption.INDENT);
+                } else {
+                    run(() -> Files.deleteIfExists(file), null);
+                }
             }
         } finally {
             run(() -> Files.delete(lock), "Failed to release lock for " + file);

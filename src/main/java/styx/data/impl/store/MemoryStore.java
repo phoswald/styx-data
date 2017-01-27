@@ -1,6 +1,7 @@
 package styx.data.impl.store;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -28,8 +29,8 @@ public class MemoryStore implements Store {
     public void close() { }
 
     @Override
-    public Value read(Reference ref) {
-        return lookup(Objects.requireNonNull(ref)).read();
+    public Optional<Value> read(Reference ref) {
+        return Optional.ofNullable(lookup(Objects.requireNonNull(ref)).read());
     }
 
     @Override
