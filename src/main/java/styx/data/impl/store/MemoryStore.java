@@ -18,7 +18,7 @@ public class MemoryStore implements Store {
     protected MemoryStore() { }
 
     public static Store open(String name) {
-        if(name == null) {
+        if(name == null || name.isEmpty()) {
             return new MemoryStore();
         } else {
             return namedInstances.computeIfAbsent(name, k -> new MemoryStore());
