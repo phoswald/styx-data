@@ -1,4 +1,4 @@
-package styx.data.impl.store;
+package styx.data.impl.mem;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -11,7 +11,7 @@ import styx.data.Value;
 
 public class MemoryStore implements Store {
 
-    private static final ConcurrentMap<String, Store> namedInstances = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<String, MemoryStore> namedInstances = new ConcurrentHashMap<>();
 
     protected final MemoryObject root = new MemoryObject(null);
 

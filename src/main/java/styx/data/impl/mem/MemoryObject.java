@@ -1,4 +1,4 @@
-package styx.data.impl.store;
+package styx.data.impl.mem;
 
 import java.util.HashMap;
 import java.util.Map;

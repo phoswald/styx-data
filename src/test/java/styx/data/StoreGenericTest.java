@@ -35,7 +35,9 @@ public class StoreGenericTest {
         return Arrays.<Object[]>asList(
             new Object[] { "memory" },
             new Object[] { "memory:generic" },
-            new Object[] { "file:target/test/StoreGenericTest/store.styx" }
+            new Object[] { "file:target/test/StoreGenericTest/store.styx" },
+            new Object[] { "memorydb" },
+            new Object[] { "memorydb:generic" }
         );
     }
 
