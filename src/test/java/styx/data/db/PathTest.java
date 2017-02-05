@@ -39,4 +39,18 @@ public class PathTest {
         assertEquals(1, Path.of(1).compareTo(Path.of()));
         assertEquals(1, Path.of(2).compareTo(Path.of(1)));
     }
+
+    @Test
+    public void testEncodeDecode() {
+        assertEncodeDecode(Path.of(), "");
+        assertEncodeDecode(Path.of(0x01), "0001");
+        assertEncodeDecode(Path.of(0x1234), "1234");
+        assertEncodeDecode(Path.of(0xFFFF), "FFFF");
+        assertEncodeDecode(Path.of(0x01, 0x1234), "00011234");
+    }
+
+    private void assertEncodeDecode(Path path, String encoded) {
+        assertEquals(encoded, path.encode());
+        assertEquals(path, Path.decode(encoded));
+    }
 }

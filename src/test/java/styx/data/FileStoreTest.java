@@ -7,6 +7,7 @@ import static styx.data.Values.list;
 import static styx.data.Values.root;
 import static styx.data.Values.text;
 
+import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,30 +16,33 @@ import java.nio.file.Paths;
 import org.junit.Before;
 import org.junit.Test;
 
-public class StoreFileTest {
+public class FileStoreTest extends GenericStoreTest {
 
-    private final Path file = Paths.get("target/test/StoreFileTest/store.styx");
+    private static final Path file = Paths.get("target/test/FileStoreTest/store.styx");
+    private static final String url = "file:" + file;
+
+    public FileStoreTest() {
+        super(url);
+    }
 
     @Before
-    public void prepare() {
-        try(Store store = Store.file(file)) {
-            store.write(root(), null);
-        }
-        assertFalse(Files.exists(file));
+    public void deleteFile() throws IOException {
+        Files.deleteIfExists(file);
     }
 
     @Test
     public void testOpenFile() {
-        try(Store store = Store.file(file)) {
+        assertFalse(Files.exists(file));
+        try(Store store = Store.open(url)) {
             store.write(root(), list(text("hello")));
         }
         assertTrue(Files.exists(file));
-        try(Store store = Store.file(file)) {
+        try(Store store = Store.open(url)) {
             store.write(root(), null);
         }
         assertFalse(Files.exists(file));
-        try(Store store = Store.file(file)) {
-            assertException(UncheckedIOException.class, "Failed to aquire lock for " + file, () -> Store.file(file));
+        try(Store store = Store.open(url)) {
+            assertException(UncheckedIOException.class, "Failed to aquire lock for " + file, () -> Store.open(url));
             store.write(root(), list(text("hello, world")));
         }
         assertTrue(Files.exists(file));

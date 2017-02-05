@@ -12,7 +12,7 @@ import styx.data.Store;
 import styx.data.Value;
 import styx.data.Values;
 
-public class FileStore extends MemoryStore {
+class FileStore extends MemoryStore {
 
     private final Path file;
     private final Path lock;
@@ -30,7 +30,7 @@ public class FileStore extends MemoryStore {
         }
     }
 
-    public static Store open(Path file) {
+    static Store open(Path file) {
         run(() -> Files.createDirectories(file.getParent()), "Invalid path: " + file);
         return new FileStore(Objects.requireNonNull(file));
     }

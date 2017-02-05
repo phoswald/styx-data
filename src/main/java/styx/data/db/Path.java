@@ -15,6 +15,23 @@ public class Path implements Comparable<Path> {
         return new Path(Arrays.copyOf(parts, parts.length));
     }
 
+    public static Path decode(String string) {
+        int[] parts = new int[string.length() / 4];
+        for(int i = 0; i < parts.length; i++) {
+            parts[i] = Integer.parseInt(string.substring(i*4, i*4+4), 16);
+        }
+        return new Path(parts);
+    }
+
+    public String encode() {
+        StringBuilder sb = new StringBuilder();
+        for(int i = 0; i < parts.length; i++) {
+            int part = parts[i];
+            sb.append(String.format("%04X", part));
+        }
+        return sb.toString();
+    }
+
     @Override
     public String toString() {
         return Arrays.toString(parts);

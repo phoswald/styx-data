@@ -6,9 +6,13 @@ import static org.junit.Assert.assertFalse;
 import org.junit.Before;
 import org.junit.Test;
 
-public class DatabaseTest {
+public abstract class GenericDatabaseTest {
 
-    private Database testee = MemoryDatabase.open(null);
+    private final Database testee;
+
+    protected GenericDatabaseTest(Database testee) {
+        this.testee = testee;
+    }
 
     @Before
     public void prepare() {
@@ -98,12 +102,12 @@ public class DatabaseTest {
         assertEquals("[1]/key4->2", rows[4].toString());
     }
 
-    @Test(expected=IllegalStateException.class)
+    @Test(expected=RuntimeException.class) // IllegalStateException if memory DB, unclear if JDBC
     public void testInsertExistingSimple() {
         testee.insertSimple(Path.of(1), "key1", "val1");
     }
 
-    @Test(expected=IllegalStateException.class)
+    @Test(expected=RuntimeException.class) // IllegalStateException if memory DB, unclear if JDBC
     public void testInsertExistingComplex() {
         testee.insertComplex(Path.of(1), "key3", 1);
     }

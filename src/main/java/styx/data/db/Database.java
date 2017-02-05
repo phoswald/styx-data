@@ -17,11 +17,17 @@ public interface Database extends AutoCloseable {
     public Stream<Row> selectDescendants(Path parent);
 
     @Deprecated // TODO: remove allocateSuffx()
-    public int allocateSuffx(Path parent);
+    public int allocateSuffix(Path parent);
 
-    public void insertComplex(Path parent, String key, int suffix);
+    public default void insertComplex(Path parent, String key, int suffix) {
+        insert(new Row(parent, key, suffix, null));
+    }
 
-    public void insertSimple(Path parent, String key, String value);
+    public default void insertSimple(Path parent, String key, String value) {
+        insert(new Row(parent, key, 0, value));
+    }
+
+    public void insert(Row row);
 
     public void deleteAll();
 

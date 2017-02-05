@@ -13,39 +13,16 @@ import static styx.data.Values.reference;
 import static styx.data.Values.root;
 import static styx.data.Values.text;
 
-import java.util.Arrays;
-
-import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.Parameters;
 
 import styx.data.exception.InvalidWriteException;
 
-@RunWith(Parameterized.class)
-public class StoreGenericTest {
+public abstract class GenericStoreTest {
 
-    @Parameter
-    public String url;
+    protected final String url;
 
-    @Parameters
-    public static Iterable<Object[]> parameters() {
-        return Arrays.<Object[]>asList(
-            new Object[] { "memory" },
-            new Object[] { "memory:generic" },
-            new Object[] { "file:target/test/StoreGenericTest/store.styx" },
-            new Object[] { "memorydb" },
-            new Object[] { "memorydb:generic" }
-        );
-    }
-
-    @Before
-    public void prepare() {
-        try(Store store = Store.open(url)) {
-            store.write(root(), null);
-        }
+    protected GenericStoreTest(String url) {
+        this.url = url;
     }
 
     @Test

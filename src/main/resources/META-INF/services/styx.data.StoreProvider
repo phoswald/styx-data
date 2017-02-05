@@ -1,0 +1,3 @@
+styx.data.impl.mem.MemoryStoreProvider
+styx.data.impl.mem.FileStoreProvider
+styx.data.db.MemoryDatabaseStoreProvider

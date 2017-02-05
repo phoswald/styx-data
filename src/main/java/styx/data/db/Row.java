@@ -12,21 +12,17 @@ public class Row {
     private final int    suffix;
     private final String value;
 
-    public Row(Path parent, String key, int suffix) {
-        if(suffix <= 0) {
-            throw new IllegalArgumentException();
+    public Row(Path parent, String key, int suffix, String value) {
+        if(value == null && suffix <= 0) {
+            throw new IllegalArgumentException(); // not a valid simple row
+        }
+        if(value != null && suffix != 0) {
+            throw new IllegalArgumentException(); // not a valid complex row
         }
         this.parent = Objects.requireNonNull(parent);
         this.key = Objects.requireNonNull(key);
         this.suffix = suffix;
-        this.value = null;
-    }
-
-    public Row(Path parent, String key, String value) {
-        this.parent = Objects.requireNonNull(parent);
-        this.key = Objects.requireNonNull(key);
-        this.suffix = 0;
-        this.value = Objects.requireNonNull(value);
+        this.value = value;
     }
 
     @Override

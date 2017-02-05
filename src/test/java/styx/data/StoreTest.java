@@ -6,18 +6,18 @@ import static org.junit.Assert.assertSame;
 
 import org.junit.Test;
 
-public class StoreMemoryTest {
+public class StoreTest {
 
     @Test
     public void testOpenMemory() {
         try(
-                Store unnamed1 = Store.memory();
-                Store unnamed2 = Store.memory();
-                Store unnamed3 = Store.memory("");
-                Store unnamed4 = Store.memory("");
-                Store namedA1 = Store.memory("A");
-                Store namedA2 = Store.memory("A");
-                Store namedB = Store.memory("B")) {
+                Store unnamed1 = Store.open("memory");
+                Store unnamed2 = Store.open("memory");
+                Store unnamed3 = Store.open("memory:");
+                Store unnamed4 = Store.open("memory:");
+                Store namedA1 = Store.open("memory:A");
+                Store namedA2 = Store.open("memory:A");
+                Store namedB = Store.open("memory:B")) {
             assertNotNull(unnamed1);
             assertNotNull(unnamed2);
             assertNotNull(namedA1);

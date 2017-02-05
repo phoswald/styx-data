@@ -53,7 +53,7 @@ public class MemoryDatabase implements Database {
     }
 
     @Override
-    public int allocateSuffx(Path parent) {
+    public int allocateSuffix(Path parent) {
         return rows.values().stream().
                 filter(row -> row.parent().equals(parent)).
                 max(Comparator.comparing(Row::suffix)).
@@ -61,15 +61,8 @@ public class MemoryDatabase implements Database {
     }
 
     @Override
-    public void insertComplex(Path parent, String key, int suffix) {
-        if(rows.putIfAbsent(new RowKey(parent, key), new Row(parent, key, suffix)) != null) {
-            throw new IllegalStateException();
-        }
-    }
-
-    @Override
-    public void insertSimple(Path parent, String key, String value) {
-        if(rows.putIfAbsent(new RowKey(parent, key), new Row(parent, key, value)) != null) {
+    public void insert(Row row) {
+        if(rows.putIfAbsent(new RowKey(row.parent(), row.key()), row) != null) {
             throw new IllegalStateException();
         }
     }

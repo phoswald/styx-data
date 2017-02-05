@@ -106,7 +106,7 @@ public class DatabaseStore implements Store {
                 key = "";
             }
             if(value.isComplex()) {
-                int suffix = db.allocateSuffx(parent);
+                int suffix = db.allocateSuffix(parent);
                 visitDescendants(parent, key, suffix, value.asComplex());
             } else {
                 db.insertSimple(parent, key, generate(value));

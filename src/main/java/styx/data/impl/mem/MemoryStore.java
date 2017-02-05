@@ -9,7 +9,7 @@ import styx.data.Reference;
 import styx.data.Store;
 import styx.data.Value;
 
-public class MemoryStore implements Store {
+class MemoryStore implements Store {
 
     private static final ConcurrentMap<String, MemoryStore> namedInstances = new ConcurrentHashMap<>();
 
@@ -17,7 +17,7 @@ public class MemoryStore implements Store {
 
     protected MemoryStore() { }
 
-    public static Store open(String name) {
+    static Store open(String name) {
         if(name == null || name.isEmpty()) {
             return new MemoryStore();
         } else {
