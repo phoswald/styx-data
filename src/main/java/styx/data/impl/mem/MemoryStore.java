@@ -4,7 +4,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Stream;
 
+import styx.data.Pair;
 import styx.data.Reference;
 import styx.data.Store;
 import styx.data.Value;
@@ -27,6 +29,11 @@ class MemoryStore implements Store {
 
     @Override
     public void close() { }
+
+    @Override
+    public Stream<Pair> browse(Reference ref) {
+        return lookup(Objects.requireNonNull(ref)).browse();
+    }
 
     @Override
     public Optional<Value> read(Reference ref) {

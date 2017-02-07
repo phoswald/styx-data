@@ -13,9 +13,10 @@ import static styx.data.Values.reference;
 import static styx.data.Values.root;
 import static styx.data.Values.text;
 
+import org.junit.Before;
 import org.junit.Test;
 
-import styx.data.exception.InvalidWriteException;
+import styx.data.exception.InvalidAccessException;
 
 public abstract class GenericStoreTest {
 
@@ -25,11 +26,16 @@ public abstract class GenericStoreTest {
         this.url = url;
     }
 
-    @Test
-    public void testRead() {
+    @Before
+    public void prepare() {
         try(Store store = Store.open(url)) {
-            assertNull(store.read(root()).orElse(null));
+            store.write(root(), null);
+        }
+    }
 
+    @Test
+    public void readWrite_valid_success() {
+        try(Store store = Store.open(url)) {
             store.write(root(), list(text("val1"), text("val2")));
 
             assertEquals(list(text("val1"), text("val2")), store.read(root()).orElse(null));
@@ -52,11 +58,8 @@ public abstract class GenericStoreTest {
     }
 
     @Test
-    public void testWrite1() {
+    public void readWrite_valid2_success() {
         try(Store store = Store.open(url)) {
-            store.write(root(), null);
-            assertNull(store.read(root()).orElse(null));
-
             store.write(root(), complex(
                     pair(text("v1"), text("v2")),
                     pair(text("v3"), text("v4")),
@@ -86,7 +89,7 @@ public abstract class GenericStoreTest {
     }
 
     @Test
-    public void testWrite2() {
+    public void readWrite_valid3_success() {
         try(Store store = Store.open(url)) {
             store.write(root(), complex(
                     pair(text("v1"), text("v2")),
@@ -106,7 +109,7 @@ public abstract class GenericStoreTest {
     }
 
     @Test
-    public void testWrite3() {
+    public void readWrite_valid4_success() {
         try(Store store = Store.open(url)) {
             store.write(root(), complex(
                     pair(text("v1"), text("v2")),
@@ -122,6 +125,7 @@ public abstract class GenericStoreTest {
             store.write(reference(text("v3"), text("v3"), text("v3")), complex());
             store.write(reference(text("v3"), text("v3"), text("v3"), text("v3")), text("v3"));
             store.write(reference(text("v5")), null);
+
             assertEquals(parse("{v1: v1 v1 v1 v1, v3: v3 v3 v3 v3}"), store.read(root()).orElse(null));
 
             store.write(reference(text("v1"), text("v1"), text("v1"), text("v1")), null);
@@ -134,6 +138,7 @@ public abstract class GenericStoreTest {
 
             store.write(root(), text("xxx"));
             store.write(root(), text("xxx"));
+
             assertEquals(text("xxx"), store.read(root()).orElse(null));
             assertNull(store.read(reference(text("v1"), text("v1"))).orElse(null));
             assertNull(store.read(reference(text("v3"), text("v3"))).orElse(null));
@@ -141,28 +146,71 @@ public abstract class GenericStoreTest {
     }
 
     @Test
-    public void testWriteSub1() {
+    public void write_nonExisting_exception() {
         try(Store store = Store.open(url)) {
-            store.write(root(), list(text("val1"), text("val2"), text("val3")));
+            store.write(root(), complex(text("key"), text("val")));
 
-            assertException(InvalidWriteException.class, "Attempt to write a child of a non-existing value.",
-                    () -> store.write(reference(text("x"), text("y"), text("z")), null));
+            assertException(InvalidAccessException.class, "Attempt to write a child of a non-existing value.",
+                    () -> store.write(reference(text("validKey"), text("badKey")), null));
 
-            assertException(InvalidWriteException.class, "Attempt to write a child of a non-existing value.",
-                    () -> store.write(reference(text("x"), text("y"), text("z")), empty()));
+            assertException(InvalidAccessException.class, "Attempt to write a child of a non-existing value.",
+                    () -> store.write(reference(text("validKey"), text("badKey")), empty()));
         }
     }
 
     @Test
-    public void testWriteSub2() {
+    public void write_nonComplex_exception() {
         try(Store store = Store.open(url)) {
-            store.write(root(), text("xxx"));
+            store.write(root(), complex(text("key"), text("val")));
 
-            assertException(InvalidWriteException.class, "Attempt to write a child of a non-existing value.",
-                    () -> store.write(reference(text("x"), text("y"), text("z")), null));
+            assertException(InvalidAccessException.class, "Attempt to write a child of a non-complex value.",
+                    () -> store.write(reference(text("key"), text("badKey")), null));
 
-            assertException(InvalidWriteException.class, "Attempt to write a child of a non-complex value.",
-                    () -> store.write(reference(text("x")), empty()));
+            assertException(InvalidAccessException.class, "Attempt to write a child of a non-complex value.",
+                    () -> store.write(reference(text("key"), text("badKey")), empty()));
+        }
+    }
+
+    @Test
+    public void browse_flatComplex_valid() {
+        try(Store store = Store.open(url)) {
+            Value value = list(text("val1"), text("val2"), empty(), empty());
+            store.write(root(), value);
+
+            Pair[] pairs = store.browse(root()).toArray(Pair[]::new);
+
+            assertEquals(value, complex(pairs));
+        }
+    }
+
+    @Test
+    public void browse_deepComplex_valid() {
+        try(Store store = Store.open(url)) {
+            Value value = complex(
+                    pair(text("A"), complex(text("AA"), complex(text("AAA"),
+                        complex(pair(text("keyA1"), text("valueA1")), pair(text("keyA2"), text("valueA2")))))),
+                    pair(text("B"), complex(text("BA"), complex(text("BAA"),
+                        complex(pair(text("keyB1"), text("valueB1")), pair(text("keyB2"), text("valueB2")))))));
+            store.write(root(), value);
+
+            Pair[] pairs = store.browse(root()).toArray(Pair[]::new);
+
+            assertEquals(
+                    complex(pair(text("A"), complex()), pair(text("B"), complex())),
+                    complex(pairs));
+        }
+    }
+
+    @Test
+    public void browse_nonComplex_exception() {
+        try(Store store = Store.open(url)) {
+            store.write(root(), complex(text("key"), text("val")));
+
+            assertException(InvalidAccessException.class, "Attempt to browse children of a non-existing value.",
+                    () -> store.browse(reference(text("badKey"))));
+
+            assertException(InvalidAccessException.class, "Attempt to browse children of a non-complex value.",
+                    () -> store.browse(reference(text("key"))));
         }
     }
 }

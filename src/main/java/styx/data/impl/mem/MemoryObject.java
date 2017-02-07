@@ -1,12 +1,16 @@
 package styx.data.impl.mem;
+import static styx.data.Values.complex;
+import static styx.data.Values.pair;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import styx.data.Complex;
+import styx.data.Pair;
 import styx.data.Value;
-import styx.data.exception.InvalidWriteException;
+import styx.data.exception.InvalidAccessException;
 
 /**
  * A mutable object, identified by a reference.
@@ -101,6 +105,18 @@ class MemoryObject {
         return child;
     }
 
+    Stream<Pair> browse() {
+        Value value = read();
+        if(value == null) {
+            throw new InvalidAccessException("Attempt to browse children of a non-existing value.");
+        } else if(!value.isComplex()) {
+            throw new InvalidAccessException("Attempt to browse children of a non-complex value.");
+        } else {
+            return value.asComplex().entries().
+                    map(p -> pair(p.key(), p.value().isComplex() ? complex() : p.value()));
+        }
+    }
+
     /**
      * Reads (gets) the value of the object.
      *
@@ -135,7 +151,7 @@ class MemoryObject {
      * Writes (sets) the value of the object.
      *
      * @param value value for the object, null if to be removed.
-     * @throws InvalidWriteException if the parent is non-existing or non-complex.
+     * @throws InvalidAccessException if the parent is non-existing or non-complex.
      */
     void write(Value value) {
         // Writing is valid only if the parent is complex.
@@ -162,7 +178,7 @@ class MemoryObject {
     /**
      * Ensures that the object has a complex value.
      *
-     * @throws InvalidWriteException if the object does not have a value or a non-complex value.
+     * @throws InvalidAccessException if the object does not have a value or a non-complex value.
      */
     private void ensureComplex() {
         // If FLAG_PARENT is set, query the value from the parent and clear the flag.
@@ -171,9 +187,9 @@ class MemoryObject {
             flags &= ~FLAG_PARENT;
         }
         if(value == null) {
-            throw new InvalidWriteException("Attempt to write a child of a non-existing value.");
+            throw new InvalidAccessException("Attempt to write a child of a non-existing value.");
         } else if(!value.isComplex()) {
-            throw new InvalidWriteException("Attempt to write a child of a non-complex value.");
+            throw new InvalidAccessException("Attempt to write a child of a non-complex value.");
         }
     }
 

@@ -2,6 +2,7 @@ package styx.data;
 
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.stream.Stream;
 
 public interface Store extends AutoCloseable {
 
@@ -17,6 +18,8 @@ public interface Store extends AutoCloseable {
 
     @Override
     public void close();
+
+    public Stream<Pair> browse(Reference ref);
 
     public Optional<Value> read(Reference ref);
 

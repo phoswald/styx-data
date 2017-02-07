@@ -1,10 +1,10 @@
 package styx.data.exception;
 
-public class InvalidWriteException extends RuntimeException {
+public class InvalidAccessException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 
-    public InvalidWriteException(String message) {
+    public InvalidAccessException(String message) {
         super(message);
     }
 }

@@ -7,13 +7,11 @@ import static styx.data.Values.list;
 import static styx.data.Values.root;
 import static styx.data.Values.text;
 
-import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.junit.Before;
 import org.junit.Test;
 
 public class FileStoreTest extends GenericStoreTest {
@@ -23,11 +21,6 @@ public class FileStoreTest extends GenericStoreTest {
 
     public FileStoreTest() {
         super(url);
-    }
-
-    @Before
-    public void deleteFile() throws IOException {
-        Files.deleteIfExists(file);
     }
 
     @Test

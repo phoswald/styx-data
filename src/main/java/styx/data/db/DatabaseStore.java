@@ -1,18 +1,21 @@
 package styx.data.db;
 
+import static styx.data.Values.complex;
 import static styx.data.Values.generate;
+import static styx.data.Values.pair;
 import static styx.data.Values.parse;
 import static styx.data.Values.text;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import styx.data.Complex;
 import styx.data.Pair;
 import styx.data.Reference;
 import styx.data.Store;
 import styx.data.Value;
-import styx.data.exception.InvalidWriteException;
+import styx.data.exception.InvalidAccessException;
 import styx.data.impl.CollectingHandler;
 
 public class DatabaseStore implements Store {
@@ -26,6 +29,23 @@ public class DatabaseStore implements Store {
     @Override
     public void close() {
         db.close();
+    }
+
+    @Override
+    public Stream<Pair> browse(Reference ref) {
+        Path path = Path.of();
+        Row current = db.selectSingle(path, "").orElse(null);
+        for(int i = 0; current != null && i < ref.partCount(); i++) {
+            path = path.add(current.suffix());
+            current = db.selectSingle(path, generate(ref.partAt(i))).orElse(null);
+        }
+        if(current == null) {
+            throw new InvalidAccessException("Attempt to browse children of a non-existing value.");
+        }
+        if(!current.isComplex()) {
+            throw new InvalidAccessException("Attempt to browse children of a non-complex value.");
+        }
+        return collectChildren(current);
     }
 
     @Override
@@ -72,6 +92,11 @@ public class DatabaseStore implements Store {
         return handler.collect();
     }
 
+    private Stream<Pair> collectChildren(Row base) {
+        return db.selectChildren(base.fullpath()).
+                map(current -> pair(parse(current.key()), current.isComplex() ? complex() : parse(current.value())));
+    }
+
     @Override
     public void write(Reference ref, Value value) {
         Path path = Path.of();
@@ -86,12 +111,12 @@ public class DatabaseStore implements Store {
             previous = current;
             current = db.selectSingle(path, key).orElse(null);
             if(i+1 < ref.partCount() && current == null) {
-                throw new InvalidWriteException("Attempt to write a child of a non-existing value.");
+                throw new InvalidAccessException("Attempt to write a child of a non-existing value.");
             }
         }
         if(ref.parent().isPresent()) {
             if(previous != null && !previous.isComplex()) {
-                throw new InvalidWriteException("Attempt to write a child of a non-complex value.");
+                throw new InvalidAccessException("Attempt to write a child of a non-complex value.");
             }
         }
         if(current != null) {

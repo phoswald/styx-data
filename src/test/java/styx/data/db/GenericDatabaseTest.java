@@ -16,6 +16,7 @@ public abstract class GenericDatabaseTest {
 
     @Before
     public void prepare() {
+        testee.deleteAll();
         testee.insertComplex(Path.of(), "", 1);
         testee.insertSimple(Path.of(1), "key1", "val1");
         testee.insertComplex(Path.of(1), "key3", 1);
