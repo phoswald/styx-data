@@ -10,13 +10,13 @@ import java.util.Optional;
 
 import org.hamcrest.CoreMatchers;
 
-class AssertUtils {
+public class AssertUtils {
 
-    static void assertException(Class<?> exceptionType, Runnable runnable) {
+    public static void assertException(Class<?> exceptionType, Runnable runnable) {
         assertException(exceptionType, null, runnable);
     }
 
-    static void assertException(Class<?> exceptionType, String messageSubstring, Runnable runnable) {
+    public static void assertException(Class<?> exceptionType, String messageSubstring, Runnable runnable) {
         try {
             runnable.run();
             fail("Expected " + exceptionType.getName());
@@ -28,7 +28,7 @@ class AssertUtils {
         }
     }
 
-    static void assertEqualPairs(List<Pair> expectedPairs, Complex actualPairs) {
+    public static void assertEqualPairs(List<Pair> expectedPairs, Complex actualPairs) {
         for(Pair expectedPair : expectedPairs) {
             Optional<Value> actualValue = actualPairs.get(expectedPair.key());
             assertTrue("key not found: " + expectedPair.key(), actualValue.isPresent());
