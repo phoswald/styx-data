@@ -137,7 +137,7 @@ public class StoreDatabaseTest {
         try(DatabaseTransaction txn = db.openReadTransaction()) {
             Row[] rows = txn.selectAll().toArray(Row[]::new);
             assertEquals(1, rows.length);
-            assertEquals("[]/=value", rows[0].toString());
+            assertEquals("parent=[], key=, suffix=, value=value", rows[0].toString());
         }
     }
 
@@ -149,11 +149,11 @@ public class StoreDatabaseTest {
         try(DatabaseTransaction txn = db.openReadTransaction()) {
             Row[] rows = txn.selectAll().toArray(Row[]::new);
             assertEquals(5, rows.length);
-            assertEquals("[]/->1", rows[0].toString());
-            assertEquals("[1]/key1=val1", rows[1].toString());
-            assertEquals("[1]/key2->1", rows[2].toString());
-            assertEquals("[1, 1]/1=val2A", rows[3].toString());
-            assertEquals("[1, 1]/2=val2B", rows[4].toString());
+            assertEquals("parent=[], key=, suffix=1, value=", rows[0].toString());
+            assertEquals("parent=[1], key=key1, suffix=, value=val1", rows[1].toString());
+            assertEquals("parent=[1], key=key2, suffix=1, value=", rows[2].toString());
+            assertEquals("parent=[1, 1], key=1, suffix=, value=val2A", rows[3].toString());
+            assertEquals("parent=[1, 1], key=2, suffix=, value=val2B", rows[4].toString());
         }
     }
 
@@ -202,9 +202,9 @@ public class StoreDatabaseTest {
         try(DatabaseTransaction txn = db.openReadTransaction()) {
             Row[] rows = txn.selectAll().toArray(Row[]::new);
             assertEquals(3, rows.length);
-            assertEquals("[]/->1", rows[0].toString());
-            assertEquals("[1]/key->2", rows[1].toString());
-            assertEquals("[1, 2]/subkey=newvalue", rows[2].toString());
+            assertEquals("parent=[], key=, suffix=1, value=", rows[0].toString());
+            assertEquals("parent=[1], key=key, suffix=2, value=", rows[1].toString());
+            assertEquals("parent=[1, 2], key=subkey, suffix=, value=newvalue", rows[2].toString());
         }
     }
 
@@ -223,10 +223,10 @@ public class StoreDatabaseTest {
         try(DatabaseTransaction txn = db.openReadTransaction()) {
             Row[] rows = txn.selectAll().toArray(Row[]::new);
             assertEquals(4, rows.length);
-            assertEquals("[]/->1", rows[0].toString());
-            assertEquals("[1]/key->2", rows[1].toString());
-            assertEquals("[1, 2]/subkey->1", rows[2].toString());
-            assertEquals("[1, 2, 1]/newkey=newvalue", rows[3].toString());
+            assertEquals("parent=[], key=, suffix=1, value=", rows[0].toString());
+            assertEquals("parent=[1], key=key, suffix=2, value=", rows[1].toString());
+            assertEquals("parent=[1, 2], key=subkey, suffix=1, value=", rows[2].toString());
+            assertEquals("parent=[1, 2, 1], key=newkey, suffix=, value=newvalue", rows[3].toString());
         }
     }
 
@@ -243,10 +243,10 @@ public class StoreDatabaseTest {
         try(DatabaseTransaction txn = db.openReadTransaction()) {
             Row[] rows = txn.selectAll().toArray(Row[]::new);
             assertEquals(4, rows.length);
-            assertEquals("[]/->1", rows[0].toString());
-            assertEquals("[1]/key->2", rows[1].toString());
-            assertEquals("[1, 2]/subkey->1", rows[2].toString());
-            assertEquals("[1, 2, 1]/newkey=newvalue", rows[3].toString());
+            assertEquals("parent=[], key=, suffix=1, value=", rows[0].toString());
+            assertEquals("parent=[1], key=key, suffix=2, value=", rows[1].toString());
+            assertEquals("parent=[1, 2], key=subkey, suffix=1, value=", rows[2].toString());
+            assertEquals("parent=[1, 2, 1], key=newkey, suffix=, value=newvalue", rows[3].toString());
         }
     }
 
@@ -262,12 +262,12 @@ public class StoreDatabaseTest {
         try(DatabaseTransaction txn = db.openReadTransaction()) {
             Row[] rows = txn.selectAll().toArray(Row[]::new);
             assertEquals(6, rows.length);
-            assertEquals("[]/->1", rows[0].toString());
-            assertEquals("[1]/key1=val1", rows[1].toString());
-            assertEquals("[1]/key2=val2", rows[2].toString());
-            assertEquals("[1]/key3->1", rows[3].toString());
-            assertEquals("[1]/key4->2", rows[4].toString());
-            assertEquals("[1, 2]/k=v", rows[5].toString());
+            assertEquals("parent=[], key=, suffix=1, value=", rows[0].toString());
+            assertEquals("parent=[1], key=key1, suffix=, value=val1", rows[1].toString());
+            assertEquals("parent=[1], key=key2, suffix=, value=val2", rows[2].toString());
+            assertEquals("parent=[1], key=key3, suffix=1, value=", rows[3].toString());
+            assertEquals("parent=[1], key=key4, suffix=2, value=", rows[4].toString());
+            assertEquals("parent=[1, 2], key=k, suffix=, value=v", rows[5].toString());
         }
     }
 }

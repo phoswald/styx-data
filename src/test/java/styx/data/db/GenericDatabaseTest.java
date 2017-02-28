@@ -34,21 +34,21 @@ public abstract class GenericDatabaseTest {
         try(DatabaseTransaction txn = testee.openReadTransaction()) {
             Row[] rows = txn.selectAll().toArray(Row[]::new);
             assertEquals(7, rows.length); // selectDescendants() returns a different order
-            assertEquals("[]/->1", rows[0].toString());
-            assertEquals("[1]/key1=val1", rows[1].toString());
-            assertEquals("[1]/key2=val2", rows[2].toString());
-            assertEquals("[1]/key3->1", rows[3].toString());
-            assertEquals("[1]/key4->2", rows[4].toString());
-            assertEquals("[1, 1]/subkey1=subval1", rows[5].toString());
-            assertEquals("[1, 1]/subkey2=subval2", rows[6].toString());
+            assertEquals("parent=[], key=, suffix=1, value=", rows[0].toString());
+            assertEquals("parent=[1], key=key1, suffix=, value=val1", rows[1].toString());
+            assertEquals("parent=[1], key=key2, suffix=, value=val2", rows[2].toString());
+            assertEquals("parent=[1], key=key3, suffix=1, value=", rows[3].toString());
+            assertEquals("parent=[1], key=key4, suffix=2, value=", rows[4].toString());
+            assertEquals("parent=[1, 1], key=subkey1, suffix=, value=subval1", rows[5].toString());
+            assertEquals("parent=[1, 1], key=subkey2, suffix=, value=subval2", rows[6].toString());
         }
     }
 
     @Test
     public void testSelectSingle() {
         try(DatabaseTransaction txn = testee.openReadTransaction()) {
-            assertEquals("[1]/key1=val1", txn.selectSingle(Path.of(1), "key1").get().toString());
-            assertEquals("[1]/key3->1", txn.selectSingle(Path.of(1), "key3").get().toString());
+            assertEquals("parent=[1], key=key1, suffix=, value=val1", txn.selectSingle(Path.of(1), "key1").get().toString());
+            assertEquals("parent=[1], key=key3, suffix=1, value=", txn.selectSingle(Path.of(1), "key3").get().toString());
             assertFalse(txn.selectSingle(Path.of(1), "keyX").isPresent());
         }
     }
@@ -69,13 +69,13 @@ public abstract class GenericDatabaseTest {
         try(DatabaseTransaction txn = testee.openReadTransaction()) {
             Row[] rows = txn.selectDescendants(Path.of()).toArray(Row[]::new);
             assertEquals(7, rows.length); // order is different from the one returned by selectAll()
-            assertEquals("[]/->1", rows[0].toString());
-            assertEquals("[1]/key1=val1", rows[1].toString());
-            assertEquals("[1]/key2=val2", rows[2].toString());
-            assertEquals("[1]/key3->1", rows[3].toString());
-            assertEquals("[1, 1]/subkey1=subval1", rows[4].toString());
-            assertEquals("[1, 1]/subkey2=subval2", rows[5].toString());
-            assertEquals("[1]/key4->2", rows[6].toString());
+            assertEquals("parent=[], key=, suffix=1, value=", rows[0].toString());
+            assertEquals("parent=[1], key=key1, suffix=, value=val1", rows[1].toString());
+            assertEquals("parent=[1], key=key2, suffix=, value=val2", rows[2].toString());
+            assertEquals("parent=[1], key=key3, suffix=1, value=", rows[3].toString());
+            assertEquals("parent=[1, 1], key=subkey1, suffix=, value=subval1", rows[4].toString());
+            assertEquals("parent=[1, 1], key=subkey2, suffix=, value=subval2", rows[5].toString());
+            assertEquals("parent=[1], key=key4, suffix=2, value=", rows[6].toString());
 
             assertEquals(6, txn.selectDescendants(Path.of(1)).count());
             assertEquals(2, txn.selectDescendants(Path.of(1, 1)).count());
@@ -114,11 +114,11 @@ public abstract class GenericDatabaseTest {
             txn.deleteDescendants(Path.of(1, 1));
             Row[] rows = txn.selectAll().toArray(Row[]::new);
             assertEquals(5, rows.length);
-            assertEquals("[]/->1", rows[0].toString());
-            assertEquals("[1]/key1=val1", rows[1].toString());
-            assertEquals("[1]/key2=val2", rows[2].toString());
-            assertEquals("[1]/key3->1", rows[3].toString());
-            assertEquals("[1]/key4->2", rows[4].toString());
+            assertEquals("parent=[], key=, suffix=1, value=", rows[0].toString());
+            assertEquals("parent=[1], key=key1, suffix=, value=val1", rows[1].toString());
+            assertEquals("parent=[1], key=key2, suffix=, value=val2", rows[2].toString());
+            assertEquals("parent=[1], key=key3, suffix=1, value=", rows[3].toString());
+            assertEquals("parent=[1], key=key4, suffix=2, value=", rows[4].toString());
         }
     }
 
@@ -143,14 +143,14 @@ public abstract class GenericDatabaseTest {
             assertFalse(txn.selectSingle(Path.of(1), "KEY1").isPresent());
             txn.insertSimple(Path.of(1), "KEY1", "UPPER");
             assertTrue(txn.selectSingle(Path.of(1), "KEY1").isPresent());
-            assertEquals("[1]/KEY1=UPPER", txn.selectSingle(Path.of(1), "KEY1").get().toString());
+            assertEquals("parent=[1], key=KEY1, suffix=, value=UPPER", txn.selectSingle(Path.of(1), "KEY1").get().toString());
 
             // keys that differ in case must be separate
             Row[] rowsTop = txn.selectChildren(Path.of(1)).toArray(Row[]::new);
             assertEquals(5, rowsTop.length);
-            assertEquals("[1]/KEY1=UPPER", rowsTop[0].toString());
-            assertEquals("[1]/key1=val1", rowsTop[1].toString());
-            assertEquals("[1]/key2=val2", rowsTop[2].toString());
+            assertEquals("parent=[1], key=KEY1, suffix=, value=UPPER", rowsTop[0].toString());
+            assertEquals("parent=[1], key=key1, suffix=, value=val1", rowsTop[1].toString());
+            assertEquals("parent=[1], key=key2, suffix=, value=val2", rowsTop[2].toString());
 
             // prepare paths that differ in case
             Path pathLower = Path.decode("1bxy");
@@ -163,16 +163,16 @@ public abstract class GenericDatabaseTest {
             Row[] rowsUpper = txn.selectChildren(pathUpper).toArray(Row[]::new);
             assertEquals(1, rowsLower.length);
             assertEquals(1, rowsUpper.length);
-            assertEquals("[1, 3901]/keyLower=valueLower", rowsLower[0].toString());
-            assertEquals("[1, 2146]/keyUpper=valueUpper", rowsUpper[0].toString());
+            assertEquals("parent=[1, 3901], key=keyLower, suffix=, value=valueLower", rowsLower[0].toString());
+            assertEquals("parent=[1, 2146], key=keyUpper, suffix=, value=valueUpper", rowsUpper[0].toString());
 
             // 'LIKE' on parent must be case sensitive
             rowsLower = txn.selectDescendants(pathLower).toArray(Row[]::new);
             rowsUpper = txn.selectDescendants(pathUpper).toArray(Row[]::new);
             assertEquals(1, rowsLower.length);
             assertEquals(1, rowsUpper.length);
-            assertEquals("[1, 3901]/keyLower=valueLower", rowsLower[0].toString());
-            assertEquals("[1, 2146]/keyUpper=valueUpper", rowsUpper[0].toString());
+            assertEquals("parent=[1, 3901], key=keyLower, suffix=, value=valueLower", rowsLower[0].toString());
+            assertEquals("parent=[1, 2146], key=keyUpper, suffix=, value=valueUpper", rowsUpper[0].toString());
         }
     }
 }

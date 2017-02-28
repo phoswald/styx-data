@@ -146,8 +146,4 @@ public class Path implements Comparable<Path> {
         parts[this.parts.length] = part;
         return new Path(parts);
     }
-
-    public Path sub() {
-        return new Path(Arrays.copyOf(this.parts, this.parts.length - 1));
-    }
 }

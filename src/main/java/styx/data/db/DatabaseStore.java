@@ -26,6 +26,10 @@ public class DatabaseStore implements Store {
         this.db = Objects.requireNonNull(db);
     }
 
+    public Database getDatabase() {
+        return db;
+    }
+
     @Override
     public void close() {
         db.close();
