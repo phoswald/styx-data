@@ -33,45 +33,54 @@ public class DatabaseStore implements Store {
 
     @Override
     public Stream<Pair> browse(Reference ref) {
-        Path path = Path.of();
-        Row current = db.selectSingle(path, "").orElse(null);
-        for(int i = 0; current != null && i < ref.partCount(); i++) {
-            path = path.add(current.suffix());
-            current = db.selectSingle(path, generate(ref.partAt(i))).orElse(null);
+        try(DatabaseTransaction txn = db.openReadTransaction()) {
+            Path path = Path.of();
+            Row current = txn.selectSingle(path, "").orElse(null);
+            for(int i = 0; current != null && i < ref.partCount(); i++) {
+                path = path.add(current.suffix());
+                current = txn.selectSingle(path, generate(ref.partAt(i))).orElse(null);
+            }
+            if(current == null) {
+                throw new InvalidAccessException("Attempt to browse children of a non-existing value.");
+            }
+            if(!current.isComplex()) {
+                throw new InvalidAccessException("Attempt to browse children of a non-complex value.");
+            }
+            return collectChildren(txn, current);
         }
-        if(current == null) {
-            throw new InvalidAccessException("Attempt to browse children of a non-existing value.");
-        }
-        if(!current.isComplex()) {
-            throw new InvalidAccessException("Attempt to browse children of a non-complex value.");
-        }
-        return collectChildren(current);
+    }
+
+    private static Stream<Pair> collectChildren(DatabaseTransaction txn, Row base) {
+        return txn.selectChildren(base.fullpath()).
+                map(current -> pair(parse(current.key()), current.isComplex() ? complex() : parse(current.value())));
     }
 
     @Override
     public Optional<Value> read(Reference ref) {
-        Path path = Path.of();
-        Row current = db.selectSingle(path, "").orElse(null);
-        for(int i = 0; current != null && i < ref.partCount(); i++) {
-            path = path.add(current.suffix());
-            current = db.selectSingle(path, generate(ref.partAt(i))).orElse(null);
-        }
-        if(current != null) {
-            if(current.isComplex()) {
-                return Optional.of(collectDescendants(current));
-            } else {
-                return Optional.of(parse(current.value()));
+        try(DatabaseTransaction txn = db.openReadTransaction()) {
+            Path path = Path.of();
+            Row current = txn.selectSingle(path, "").orElse(null);
+            for(int i = 0; current != null && i < ref.partCount(); i++) {
+                path = path.add(current.suffix());
+                current = txn.selectSingle(path, generate(ref.partAt(i))).orElse(null);
             }
-        } else {
-            return Optional.empty();
+            if(current != null) {
+                if(current.isComplex()) {
+                    return Optional.of(collectDescendants(txn, current));
+                } else {
+                    return Optional.of(parse(current.value()));
+                }
+            } else {
+                return Optional.empty();
+            }
         }
     }
 
-    private Value collectDescendants(Row base) {
+    private static Value collectDescendants(DatabaseTransaction txn, Row base) {
         CollectingHandler handler = new CollectingHandler();
         handler.open(text());
         Row previous = base;
-        for(Row current : db.selectDescendants(base.fullpath()).toArray(Row[]::new)) {
+        for(Row current : txn.selectDescendants(base.fullpath()).toArray(Row[]::new)) {
             int prefixLength = current.fullpath2().prefixLength(previous.fullpath2());
             int closeCount = previous.fullpath2().length() - prefixLength;
             while(closeCount-- > 0) {
@@ -92,62 +101,59 @@ public class DatabaseStore implements Store {
         return handler.collect();
     }
 
-    private Stream<Pair> collectChildren(Row base) {
-        return db.selectChildren(base.fullpath()).
-                map(current -> pair(parse(current.key()), current.isComplex() ? complex() : parse(current.value())));
-    }
-
     @Override
     public void write(Reference ref, Value value) {
-        Path path = Path.of();
-        Row previous = null;
-        Row current = db.selectSingle(path, "").orElse(null);
-        Path parent = null;
-        String key = null;
-        for(int i = 0; current != null && i < ref.partCount(); i++) {
-            path = path.add(current.suffix());
-            parent = path;
-            key = generate(ref.partAt(i));
-            previous = current;
-            current = db.selectSingle(path, key).orElse(null);
-            if(i+1 < ref.partCount() && current == null) {
-                throw new InvalidAccessException("Attempt to write a child of a non-existing value.");
+        try(DatabaseTransaction txn = db.openWriteTransaction()) {
+            Path path = Path.of();
+            Row previous = null;
+            Row current = txn.selectSingle(path, "").orElse(null);
+            Path parent = null;
+            String key = null;
+            for(int i = 0; current != null && i < ref.partCount(); i++) {
+                path = path.add(current.suffix());
+                parent = path;
+                key = generate(ref.partAt(i));
+                previous = current;
+                current = txn.selectSingle(path, key).orElse(null);
+                if(i+1 < ref.partCount() && current == null) {
+                    throw new InvalidAccessException("Attempt to write a child of a non-existing value.");
+                }
             }
-        }
-        if(ref.parent().isPresent()) {
-            if(previous != null && !previous.isComplex()) {
-                throw new InvalidAccessException("Attempt to write a child of a non-complex value.");
+            if(ref.parent().isPresent()) {
+                if(previous != null && !previous.isComplex()) {
+                    throw new InvalidAccessException("Attempt to write a child of a non-complex value.");
+                }
             }
-        }
-        if(current != null) {
-            db.deleteSingle(current.parent(), current.key());
-            if(current.isComplex()) {
-                db.deleteDescendants(current.fullpath());
+            if(current != null) {
+                txn.deleteSingle(current.parent(), current.key());
+                if(current.isComplex()) {
+                    txn.deleteDescendants(current.fullpath());
+                }
             }
-        }
-        if(value != null) {
-            if(ref.partCount() == 0) {
-                parent = Path.of();
-                key = "";
-            }
-            if(value.isComplex()) {
-                int suffix = db.allocateSuffix(parent);
-                visitDescendants(parent, key, suffix, value.asComplex());
-            } else {
-                db.insertSimple(parent, key, generate(value));
+            if(value != null) {
+                if(ref.partCount() == 0) {
+                    parent = Path.of();
+                    key = "";
+                }
+                if(value.isComplex()) {
+                    int suffix = txn.allocateSuffix(parent);
+                    visitDescendants(txn, parent, key, suffix, value.asComplex());
+                } else {
+                    txn.insertSimple(parent, key, generate(value));
+                }
             }
         }
     }
 
-    private void visitDescendants(Path parent, String key, int suffix, Complex value) {
-        db.insertComplex(parent, key, suffix);
+    private static void visitDescendants(DatabaseTransaction txn, Path parent, String key, int suffix, Complex value) {
+        txn.insertComplex(parent, key, suffix);
         Path current = parent.add(suffix);
         int index = 0;
         for(Pair pair : value.asComplex()) {
             if(pair.value().isComplex()) {
-                visitDescendants(current, generate(pair.key()), ++index, pair.value().asComplex());
+                visitDescendants(txn, current, generate(pair.key()), ++index, pair.value().asComplex());
             } else {
-                db.insertSimple(current, generate(pair.key()), generate(pair.value()));
+                txn.insertSimple(current, generate(pair.key()), generate(pair.value()));
             }
         }
     }

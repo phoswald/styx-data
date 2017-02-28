@@ -27,7 +27,9 @@ public class StoreDatabaseTest {
 
     @Test
     public void read_rootSimple_found() {
-        db.insertSimple(Path.of(), "", "value");
+        try(DatabaseTransaction txn = db.openWriteTransaction()) {
+            txn.insertSimple(Path.of(), "", "value");
+        }
         try(Store store = new DatabaseStore(db)) {
             assertEquals(text("value"), store.read(root()).orElse(null));
         }
@@ -35,7 +37,9 @@ public class StoreDatabaseTest {
 
     @Test
     public void read_rootEmptyComplex_found() {
-        db.insertComplex(Path.of(), "", 1);
+        try(DatabaseTransaction txn = db.openWriteTransaction()) {
+            txn.insertComplex(Path.of(), "", 1);
+        }
         try(Store store = new DatabaseStore(db)) {
             assertEquals(complex(), store.read(root()).orElse(null));
         }
@@ -50,9 +54,11 @@ public class StoreDatabaseTest {
 
     @Test
     public void read_referenceSimple_found() {
-        db.insertComplex(Path.of(), "", 1);
-        db.insertComplex(Path.of(1), "key", 2);
-        db.insertSimple(Path.of(1, 2), "subkey", "value");
+        try(DatabaseTransaction txn = db.openWriteTransaction()) {
+            txn.insertComplex(Path.of(), "", 1);
+            txn.insertComplex(Path.of(1), "key", 2);
+            txn.insertSimple(Path.of(1, 2), "subkey", "value");
+        }
         try(Store store = new DatabaseStore(db)) {
             assertEquals(text("value"), store.read(reference(text("key"), text("subkey"))).orElse(null));
         }
@@ -60,11 +66,13 @@ public class StoreDatabaseTest {
 
     @Test
     public void read_referenceComplex_found() {
-        db.insertComplex(Path.of(), "", 1);
-        db.insertComplex(Path.of(1), "key", 2);
-        db.insertComplex(Path.of(1, 2), "subkey", 3);
-        db.insertSimple(Path.of(1, 2, 3), "1", "value1");
-        db.insertSimple(Path.of(1, 2, 3), "2", "value2");
+        try(DatabaseTransaction txn = db.openWriteTransaction()) {
+            txn.insertComplex(Path.of(), "", 1);
+            txn.insertComplex(Path.of(1), "key", 2);
+            txn.insertComplex(Path.of(1, 2), "subkey", 3);
+            txn.insertSimple(Path.of(1, 2, 3), "1", "value1");
+            txn.insertSimple(Path.of(1, 2, 3), "2", "value2");
+        }
         try(Store store = new DatabaseStore(db)) {
             assertEquals(
                     list(text("value1"), text("value2")),
@@ -84,11 +92,13 @@ public class StoreDatabaseTest {
 
     @Test
     public void read_referenceComplex1_found() {
-        db.insertComplex(Path.of(), "", 1);
-        db.insertSimple(Path.of(1), "1", "val1");
-        db.insertSimple(Path.of(1), "2", "val2");
-        db.insertComplex(Path.of(1), "3", 1);
-        db.insertComplex(Path.of(1), "4", 2);
+        try(DatabaseTransaction txn = db.openWriteTransaction()) {
+            txn.insertComplex(Path.of(), "", 1);
+            txn.insertSimple(Path.of(1), "1", "val1");
+            txn.insertSimple(Path.of(1), "2", "val2");
+            txn.insertComplex(Path.of(1), "3", 1);
+            txn.insertComplex(Path.of(1), "4", 2);
+        }
         try(Store store = new DatabaseStore(db)) {
             assertEquals(list(text("val1"), text("val2"), empty(), empty()), store.read(root()).orElse(null));
         }
@@ -96,17 +106,19 @@ public class StoreDatabaseTest {
 
     @Test
     public void read_referenceComplex2_found() {
-        db.insertComplex(Path.of(), "", 1);
-        db.insertComplex(Path.of(1), "A", 1);
-        db.insertComplex(Path.of(1, 1), "AA", 1);
-        db.insertComplex(Path.of(1, 1, 1), "AAA", 1);
-        db.insertSimple(Path.of(1, 1, 1, 1), "keyA1", "valueA1");
-        db.insertSimple(Path.of(1, 1, 1, 1), "keyA2", "valueA2");
-        db.insertComplex(Path.of(1), "B", 2);
-        db.insertComplex(Path.of(1, 2), "BA", 1);
-        db.insertComplex(Path.of(1, 2, 1), "BAA", 1);
-        db.insertSimple(Path.of(1, 2, 1, 1), "keyB1", "valueB1");
-        db.insertSimple(Path.of(1, 2, 1, 1), "keyB2", "valueB2");
+        try(DatabaseTransaction txn = db.openWriteTransaction()) {
+            txn.insertComplex(Path.of(), "", 1);
+            txn.insertComplex(Path.of(1), "A", 1);
+            txn.insertComplex(Path.of(1, 1), "AA", 1);
+            txn.insertComplex(Path.of(1, 1, 1), "AAA", 1);
+            txn.insertSimple(Path.of(1, 1, 1, 1), "keyA1", "valueA1");
+            txn.insertSimple(Path.of(1, 1, 1, 1), "keyA2", "valueA2");
+            txn.insertComplex(Path.of(1), "B", 2);
+            txn.insertComplex(Path.of(1, 2), "BA", 1);
+            txn.insertComplex(Path.of(1, 2, 1), "BAA", 1);
+            txn.insertSimple(Path.of(1, 2, 1, 1), "keyB1", "valueB1");
+            txn.insertSimple(Path.of(1, 2, 1, 1), "keyB2", "valueB2");
+        }
         try(Store store = new DatabaseStore(db)) {
             assertEquals(complex(
                         pair(text("A"), complex(text("AA"), complex(text("AAA"),
@@ -122,9 +134,11 @@ public class StoreDatabaseTest {
         try(Store store = new DatabaseStore(db)) {
             store.write(root(), text("value"));
         }
-        Row[] rows = db.selectAll().toArray(Row[]::new);
-        assertEquals(1, rows.length);
-        assertEquals("[]/=value", rows[0].toString());
+        try(DatabaseTransaction txn = db.openReadTransaction()) {
+            Row[] rows = txn.selectAll().toArray(Row[]::new);
+            assertEquals(1, rows.length);
+            assertEquals("[]/=value", rows[0].toString());
+        }
     }
 
     @Test
@@ -132,86 +146,108 @@ public class StoreDatabaseTest {
         try(Store store = new DatabaseStore(db)) {
             store.write(root(), complex(pair(text("key1"), text("val1")), pair(text("key2"), list(text("val2A"), text("val2B")))));
         }
-        Row[] rows = db.selectAll().toArray(Row[]::new);
-        assertEquals(5, rows.length);
-        assertEquals("[]/->1", rows[0].toString());
-        assertEquals("[1]/key1=val1", rows[1].toString());
-        assertEquals("[1]/key2->1", rows[2].toString());
-        assertEquals("[1, 1]/1=val2A", rows[3].toString());
-        assertEquals("[1, 1]/2=val2B", rows[4].toString());
+        try(DatabaseTransaction txn = db.openReadTransaction()) {
+            Row[] rows = txn.selectAll().toArray(Row[]::new);
+            assertEquals(5, rows.length);
+            assertEquals("[]/->1", rows[0].toString());
+            assertEquals("[1]/key1=val1", rows[1].toString());
+            assertEquals("[1]/key2->1", rows[2].toString());
+            assertEquals("[1, 1]/1=val2A", rows[3].toString());
+            assertEquals("[1, 1]/2=val2B", rows[4].toString());
+        }
     }
 
     @Test
     public void write_rootNullSimple_deleted() {
-        db.insertSimple(Path.of(), "", "value");
+        try(DatabaseTransaction txn = db.openWriteTransaction()) {
+            txn.insertSimple(Path.of(), "", "value");
+        }
         try(Store store = new DatabaseStore(db)) {
             store.write(root(), null);
         }
-        assertEquals(0, db.selectAll().count());
+        try(DatabaseTransaction txn = db.openReadTransaction()) {
+            assertEquals(0, txn.selectAll().count());
+        }
     }
 
     @Test
     public void write_rootNullComplex_deleted() {
-        db.insertComplex(Path.of(), "", 1);
-        db.insertComplex(Path.of(1), "key", 2);
-        db.insertComplex(Path.of(1, 2), "subkey", 3);
-        db.insertSimple(Path.of(1, 2, 3), "1", "value1");
-        db.insertSimple(Path.of(1, 2, 3), "2", "value2");
+        try(DatabaseTransaction txn = db.openWriteTransaction()) {
+            txn.insertComplex(Path.of(), "", 1);
+            txn.insertComplex(Path.of(1), "key", 2);
+            txn.insertComplex(Path.of(1, 2), "subkey", 3);
+            txn.insertSimple(Path.of(1, 2, 3), "1", "value1");
+            txn.insertSimple(Path.of(1, 2, 3), "2", "value2");
+        }
         try(Store store = new DatabaseStore(db)) {
             store.write(root(), null);
         }
-        assertEquals(0, db.selectAll().count());
+        try(DatabaseTransaction txn = db.openReadTransaction()) {
+            assertEquals(0, txn.selectAll().count());
+        }
     }
 
     @Test
     public void write_referenceSimple_replaced() {
-        db.insertComplex(Path.of(), "", 1);
-        db.insertComplex(Path.of(1), "key", 2);
-        db.insertComplex(Path.of(1, 2), "subkey", 3);
-        db.insertSimple(Path.of(1, 2, 3), "1", "value1");
-        db.insertSimple(Path.of(1, 2, 3), "2", "value2");
+        try(DatabaseTransaction txn = db.openWriteTransaction()) {
+            txn.insertComplex(Path.of(), "", 1);
+            txn.insertComplex(Path.of(1), "key", 2);
+            txn.insertComplex(Path.of(1, 2), "subkey", 3);
+            txn.insertSimple(Path.of(1, 2, 3), "1", "value1");
+            txn.insertSimple(Path.of(1, 2, 3), "2", "value2");
+        }
         try(Store store = new DatabaseStore(db)) {
             store.write(reference(text("key"), text("subkey")), text("newvalue"));
         }
-        Row[] rows = db.selectAll().toArray(Row[]::new);
-        assertEquals(3, rows.length);
-        assertEquals("[]/->1", rows[0].toString());
-        assertEquals("[1]/key->2", rows[1].toString());
-        assertEquals("[1, 2]/subkey=newvalue", rows[2].toString());
+        try(DatabaseTransaction txn = db.openReadTransaction()) {
+            Row[] rows = txn.selectAll().toArray(Row[]::new);
+            assertEquals(3, rows.length);
+            assertEquals("[]/->1", rows[0].toString());
+            assertEquals("[1]/key->2", rows[1].toString());
+            assertEquals("[1, 2]/subkey=newvalue", rows[2].toString());
+        }
     }
 
     @Test
     public void write_referenceComplex_replaced() {
-        db.insertComplex(Path.of(), "", 1);
-        db.insertComplex(Path.of(1), "key", 2);
-        db.insertComplex(Path.of(1, 2), "subkey", 3);
-        db.insertSimple(Path.of(1, 2, 3), "1", "value1");
-        db.insertSimple(Path.of(1, 2, 3), "2", "value2");
+        try(DatabaseTransaction txn = db.openWriteTransaction()) {
+            txn.insertComplex(Path.of(), "", 1);
+            txn.insertComplex(Path.of(1), "key", 2);
+            txn.insertComplex(Path.of(1, 2), "subkey", 3);
+            txn.insertSimple(Path.of(1, 2, 3), "1", "value1");
+            txn.insertSimple(Path.of(1, 2, 3), "2", "value2");
+        }
         try(Store store = new DatabaseStore(db)) {
             store.write(reference(text("key"), text("subkey")), complex(text("newkey"), text("newvalue")));
         }
-        Row[] rows = db.selectAll().toArray(Row[]::new);
-        assertEquals(4, rows.length);
-        assertEquals("[]/->1", rows[0].toString());
-        assertEquals("[1]/key->2", rows[1].toString());
-        assertEquals("[1, 2]/subkey->1", rows[2].toString());
-        assertEquals("[1, 2, 1]/newkey=newvalue", rows[3].toString());
+        try(DatabaseTransaction txn = db.openReadTransaction()) {
+            Row[] rows = txn.selectAll().toArray(Row[]::new);
+            assertEquals(4, rows.length);
+            assertEquals("[]/->1", rows[0].toString());
+            assertEquals("[1]/key->2", rows[1].toString());
+            assertEquals("[1, 2]/subkey->1", rows[2].toString());
+            assertEquals("[1, 2, 1]/newkey=newvalue", rows[3].toString());
+        }
     }
 
     @Test
     public void write_referenceComplex2_replaced() {
-        db.insertComplex(Path.of(), "", 1);
-        db.insertComplex(Path.of(1), "key", 2);
-        db.insertSimple(Path.of(1, 2), "subkey", "oldvalue");
+        try(DatabaseTransaction txn = db.openWriteTransaction()) {
+            txn.insertComplex(Path.of(), "", 1);
+            txn.insertComplex(Path.of(1), "key", 2);
+            txn.insertSimple(Path.of(1, 2), "subkey", "oldvalue");
+        }
         try(Store store = new DatabaseStore(db)) {
             store.write(reference(text("key"), text("subkey")), complex(text("newkey"), text("newvalue")));
         }
-        Row[] rows = db.selectAll().toArray(Row[]::new);
-        assertEquals(4, rows.length);
-        assertEquals("[]/->1", rows[0].toString());
-        assertEquals("[1]/key->2", rows[1].toString());
-        assertEquals("[1, 2]/subkey->1", rows[2].toString());
-        assertEquals("[1, 2, 1]/newkey=newvalue", rows[3].toString());
+        try(DatabaseTransaction txn = db.openReadTransaction()) {
+            Row[] rows = txn.selectAll().toArray(Row[]::new);
+            assertEquals(4, rows.length);
+            assertEquals("[]/->1", rows[0].toString());
+            assertEquals("[1]/key->2", rows[1].toString());
+            assertEquals("[1, 2]/subkey->1", rows[2].toString());
+            assertEquals("[1, 2, 1]/newkey=newvalue", rows[3].toString());
+        }
     }
 
     @Test
@@ -223,13 +259,15 @@ public class StoreDatabaseTest {
             store.write(reference(text("key3")), complex());
             store.write(reference(text("key4")), complex(text("k"), text("v")));
         }
-        Row[] rows = db.selectAll().toArray(Row[]::new);
-        assertEquals(6, rows.length);
-        assertEquals("[]/->1", rows[0].toString());
-        assertEquals("[1]/key1=val1", rows[1].toString());
-        assertEquals("[1]/key2=val2", rows[2].toString());
-        assertEquals("[1]/key3->1", rows[3].toString());
-        assertEquals("[1]/key4->2", rows[4].toString());
-        assertEquals("[1, 2]/k=v", rows[5].toString());
+        try(DatabaseTransaction txn = db.openReadTransaction()) {
+            Row[] rows = txn.selectAll().toArray(Row[]::new);
+            assertEquals(6, rows.length);
+            assertEquals("[]/->1", rows[0].toString());
+            assertEquals("[1]/key1=val1", rows[1].toString());
+            assertEquals("[1]/key2=val2", rows[2].toString());
+            assertEquals("[1]/key3->1", rows[3].toString());
+            assertEquals("[1]/key4->2", rows[4].toString());
+            assertEquals("[1, 2]/k=v", rows[5].toString());
+        }
     }
 }
