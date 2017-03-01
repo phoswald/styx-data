@@ -37,7 +37,7 @@ public class Row {
         }
     }
 
-    public static Row decode(String line) {
+    static Row decode(String line) {
         Matcher matcher = ENCODING_PATTERN.matcher(line);
         if(!matcher.matches()) {
             throw new IllegalArgumentException("Line does not match pattern for row: " + line);
@@ -49,7 +49,7 @@ public class Row {
                 matcher.group(4).isEmpty() ? null : matcher.group(4));
     }
 
-    public String encode() {
+    String encode() {
         return parent.encode() + "\t" +
                 key + "\t" +
                 (suffix == 0 ? "" : suffix) + "\t" +

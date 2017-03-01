@@ -11,9 +11,9 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 
+import styx.data.ParserException;
 import styx.data.Reference;
 import styx.data.Value;
-import styx.data.exception.ParserException;
 
 public class Parser {
 

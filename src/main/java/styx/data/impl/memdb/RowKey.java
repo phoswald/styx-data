@@ -1,6 +1,8 @@
-package styx.data.db;
+package styx.data.impl.memdb;
 
 import java.util.Objects;
+
+import styx.data.db.Path;
 
 class RowKey implements Comparable<RowKey> {
 

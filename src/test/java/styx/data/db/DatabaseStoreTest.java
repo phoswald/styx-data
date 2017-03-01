@@ -14,9 +14,9 @@ import org.junit.Test;
 
 import styx.data.Store;
 
-public class StoreDatabaseTest {
+public class DatabaseStoreTest {
 
-    private final Database db = MemoryDatabase.open(null);
+    private final Database db = ((DatabaseStore) Store.open("memorydb")).getDatabase();
 
     @Test
     public void read_rootEmpty_noValue() {

@@ -1,9 +1,10 @@
-package styx.data.db;
+package styx.data.impl.memdb;
 
 import java.util.Optional;
 
 import styx.data.Store;
 import styx.data.StoreProvider;
+import styx.data.db.DatabaseStore;
 
 public class MemoryDatabaseStoreProvider implements StoreProvider {
 

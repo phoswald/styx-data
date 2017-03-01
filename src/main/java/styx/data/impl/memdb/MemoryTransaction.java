@@ -1,4 +1,4 @@
-package styx.data.db;
+package styx.data.impl.memdb;
 
 import java.util.Comparator;
 import java.util.List;
@@ -6,6 +6,10 @@ import java.util.Optional;
 import java.util.SortedMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import styx.data.db.DatabaseTransaction;
+import styx.data.db.Path;
+import styx.data.db.Row;
 
 class MemoryTransaction implements DatabaseTransaction {
 

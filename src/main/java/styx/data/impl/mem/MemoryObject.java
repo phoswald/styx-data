@@ -8,9 +8,9 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import styx.data.Complex;
+import styx.data.InvalidAccessException;
 import styx.data.Pair;
 import styx.data.Value;
-import styx.data.exception.InvalidAccessException;
 
 /**
  * A mutable object, identified by a reference.

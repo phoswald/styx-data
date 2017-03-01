@@ -19,8 +19,6 @@ import java.nio.file.Paths;
 
 import org.junit.Test;
 
-import styx.data.exception.ParserException;
-
 public class ParserTest {
 
     @Test

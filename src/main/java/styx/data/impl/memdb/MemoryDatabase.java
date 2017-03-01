@@ -1,9 +1,13 @@
-package styx.data.db;
+package styx.data.impl.memdb;
 
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import styx.data.db.Database;
+import styx.data.db.DatabaseTransaction;
+import styx.data.db.Row;
 
 class MemoryDatabase implements Database {
 

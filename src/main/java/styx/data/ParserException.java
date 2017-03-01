@@ -1,4 +1,4 @@
-package styx.data.exception;
+package styx.data;
 
 public class ParserException extends RuntimeException {
 

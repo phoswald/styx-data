@@ -11,11 +11,11 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import styx.data.Complex;
+import styx.data.InvalidAccessException;
 import styx.data.Pair;
 import styx.data.Reference;
 import styx.data.Store;
 import styx.data.Value;
-import styx.data.exception.InvalidAccessException;
 import styx.data.impl.CollectingHandler;
 
 public class DatabaseStore implements Store {
@@ -26,7 +26,7 @@ public class DatabaseStore implements Store {
         this.db = Objects.requireNonNull(db);
     }
 
-    public Database getDatabase() {
+    Database getDatabase() {
         return db;
     }
 

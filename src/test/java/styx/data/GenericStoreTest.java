@@ -16,8 +16,6 @@ import static styx.data.Values.text;
 import org.junit.Before;
 import org.junit.Test;
 
-import styx.data.exception.InvalidAccessException;
-
 public abstract class GenericStoreTest {
 
     protected final String url;
