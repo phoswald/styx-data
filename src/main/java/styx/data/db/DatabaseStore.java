@@ -146,6 +146,7 @@ public class DatabaseStore implements Store {
                     txn.insertSimple(parent, key, generate(value));
                 }
             }
+            txn.markCommit();
         }
     }
 

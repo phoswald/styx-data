@@ -29,6 +29,7 @@ public class DatabaseStoreTest {
     public void read_rootSimple_found() {
         try(DatabaseTransaction txn = db.openWriteTransaction()) {
             txn.insertSimple(Path.of(), "", "value");
+            txn.markCommit();
         }
         try(Store store = new DatabaseStore(db)) {
             assertEquals(text("value"), store.read(root()).orElse(null));
@@ -39,6 +40,7 @@ public class DatabaseStoreTest {
     public void read_rootEmptyComplex_found() {
         try(DatabaseTransaction txn = db.openWriteTransaction()) {
             txn.insertComplex(Path.of(), "", 1);
+            txn.markCommit();
         }
         try(Store store = new DatabaseStore(db)) {
             assertEquals(complex(), store.read(root()).orElse(null));
@@ -58,6 +60,7 @@ public class DatabaseStoreTest {
             txn.insertComplex(Path.of(), "", 1);
             txn.insertComplex(Path.of(1), "key", 2);
             txn.insertSimple(Path.of(1, 2), "subkey", "value");
+            txn.markCommit();
         }
         try(Store store = new DatabaseStore(db)) {
             assertEquals(text("value"), store.read(reference(text("key"), text("subkey"))).orElse(null));
@@ -72,6 +75,7 @@ public class DatabaseStoreTest {
             txn.insertComplex(Path.of(1, 2), "subkey", 3);
             txn.insertSimple(Path.of(1, 2, 3), "1", "value1");
             txn.insertSimple(Path.of(1, 2, 3), "2", "value2");
+            txn.markCommit();
         }
         try(Store store = new DatabaseStore(db)) {
             assertEquals(
@@ -98,6 +102,7 @@ public class DatabaseStoreTest {
             txn.insertSimple(Path.of(1), "2", "val2");
             txn.insertComplex(Path.of(1), "3", 1);
             txn.insertComplex(Path.of(1), "4", 2);
+            txn.markCommit();
         }
         try(Store store = new DatabaseStore(db)) {
             assertEquals(list(text("val1"), text("val2"), empty(), empty()), store.read(root()).orElse(null));
@@ -118,6 +123,7 @@ public class DatabaseStoreTest {
             txn.insertComplex(Path.of(1, 2, 1), "BAA", 1);
             txn.insertSimple(Path.of(1, 2, 1, 1), "keyB1", "valueB1");
             txn.insertSimple(Path.of(1, 2, 1, 1), "keyB2", "valueB2");
+            txn.markCommit();
         }
         try(Store store = new DatabaseStore(db)) {
             assertEquals(complex(
@@ -161,6 +167,7 @@ public class DatabaseStoreTest {
     public void write_rootNullSimple_deleted() {
         try(DatabaseTransaction txn = db.openWriteTransaction()) {
             txn.insertSimple(Path.of(), "", "value");
+            txn.markCommit();
         }
         try(Store store = new DatabaseStore(db)) {
             store.write(root(), null);
@@ -178,6 +185,7 @@ public class DatabaseStoreTest {
             txn.insertComplex(Path.of(1, 2), "subkey", 3);
             txn.insertSimple(Path.of(1, 2, 3), "1", "value1");
             txn.insertSimple(Path.of(1, 2, 3), "2", "value2");
+            txn.markCommit();
         }
         try(Store store = new DatabaseStore(db)) {
             store.write(root(), null);
@@ -195,6 +203,7 @@ public class DatabaseStoreTest {
             txn.insertComplex(Path.of(1, 2), "subkey", 3);
             txn.insertSimple(Path.of(1, 2, 3), "1", "value1");
             txn.insertSimple(Path.of(1, 2, 3), "2", "value2");
+            txn.markCommit();
         }
         try(Store store = new DatabaseStore(db)) {
             store.write(reference(text("key"), text("subkey")), text("newvalue"));
@@ -216,6 +225,7 @@ public class DatabaseStoreTest {
             txn.insertComplex(Path.of(1, 2), "subkey", 3);
             txn.insertSimple(Path.of(1, 2, 3), "1", "value1");
             txn.insertSimple(Path.of(1, 2, 3), "2", "value2");
+            txn.markCommit();
         }
         try(Store store = new DatabaseStore(db)) {
             store.write(reference(text("key"), text("subkey")), complex(text("newkey"), text("newvalue")));
@@ -236,6 +246,7 @@ public class DatabaseStoreTest {
             txn.insertComplex(Path.of(), "", 1);
             txn.insertComplex(Path.of(1), "key", 2);
             txn.insertSimple(Path.of(1, 2), "subkey", "oldvalue");
+            txn.markCommit();
         }
         try(Store store = new DatabaseStore(db)) {
             store.write(reference(text("key"), text("subkey")), complex(text("newkey"), text("newvalue")));

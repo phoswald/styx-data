@@ -8,6 +8,8 @@ public interface DatabaseTransaction extends AutoCloseable {
     @Override
     public void close();
 
+    public void markCommit();
+
     public Stream<Row> selectAll();
 
     public Optional<Row> selectSingle(Path parent, String key);

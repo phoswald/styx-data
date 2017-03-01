@@ -56,6 +56,7 @@ public class DatabaseAdmin {
                     map(Row::decode).
                     peek(r -> counter.incrementAndGet()).
                     forEach(txn::insert);
+            txn.markCommit();
         }
         return counter.get();
     }

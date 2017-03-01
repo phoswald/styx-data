@@ -3,6 +3,7 @@ package styx.data.db;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static styx.data.AssertUtils.assertException;
 
 import org.junit.After;
 import org.junit.Before;
@@ -27,6 +28,7 @@ public abstract class GenericDatabaseTest {
             txn.insertSimple(Path.of(1), "key2", "val2");
             txn.insertSimple(Path.of(1, 1), "subkey2", "subval2");
             txn.insertSimple(Path.of(1, 1), "subkey1", "subval1");
+            txn.markCommit();
         }
     }
 
@@ -103,6 +105,7 @@ public abstract class GenericDatabaseTest {
         try(DatabaseTransaction txn = testee.openWriteTransaction()) {
             txn.deleteSingle(Path.of(1), "key1");
             assertEquals(6, txn.selectAll().count());
+            txn.markCommit();
         }
     }
 
@@ -111,6 +114,7 @@ public abstract class GenericDatabaseTest {
         try(DatabaseTransaction txn = testee.openWriteTransaction()) {
             txn.deleteDescendants(Path.of());
             assertEquals(0, txn.selectAll().count());
+            txn.markCommit();
         }
     }
 
@@ -125,6 +129,20 @@ public abstract class GenericDatabaseTest {
             assertEquals("parent=[1], key=key2, suffix=, value=val2", rows[2].toString());
             assertEquals("parent=[1], key=key3, suffix=1, value=", rows[3].toString());
             assertEquals("parent=[1], key=key4, suffix=2, value=", rows[4].toString());
+            txn.markCommit();
+        }
+    }
+
+    @Test
+    public void testInsert() {
+        try(DatabaseTransaction txn = testee.openWriteTransaction()) {
+            txn.insertSimple(Path.of(1), "newSimpleKey", "val1");
+            txn.insertComplex(Path.of(1), "newComplexKey", 5);
+            assertEquals(9, txn.selectAll().count());
+            assertEquals(6, txn.selectChildren(Path.of(1)).count());
+            assertEquals(8, txn.selectDescendants(Path.of(1)).count());
+            assertEquals(6, txn.allocateSuffix(Path.of(1)));
+            txn.markCommit();
         }
     }
 
@@ -132,6 +150,7 @@ public abstract class GenericDatabaseTest {
     public void testInsertExistingSimple() {
         try(DatabaseTransaction txn = testee.openWriteTransaction()) {
             txn.insertSimple(Path.of(1), "key1", "val1");
+            txn.markCommit();
         }
     }
 
@@ -139,6 +158,7 @@ public abstract class GenericDatabaseTest {
     public void testInsertExistingComplex() {
         try(DatabaseTransaction txn = testee.openWriteTransaction()) {
             txn.insertComplex(Path.of(1), "key3", 1);
+            txn.markCommit();
         }
     }
 
@@ -179,6 +199,34 @@ public abstract class GenericDatabaseTest {
             assertEquals(1, rowsUpper.length);
             assertEquals("parent=[1, 3901], key=keyLower, suffix=, value=valueLower", rowsLower[0].toString());
             assertEquals("parent=[1, 2146], key=keyUpper, suffix=, value=valueUpper", rowsUpper[0].toString());
+            txn.markCommit();
+        }
+    }
+
+    @Test
+    public void testUncomittedWriteTransaction() {
+        try(DatabaseTransaction txn = testee.openWriteTransaction()) {
+            txn.insertSimple(Path.of(1), "newSimpleKey", "val1");
+            txn.insertComplex(Path.of(1), "newComplexKey", 5);
+            assertEquals(9, txn.selectAll().count());
+        }
+        try(DatabaseTransaction txn = testee.openReadTransaction()) {
+            assertEquals(7, txn.selectAll().count());
+        }
+    }
+
+    @Test
+    public void testModifyingReadTransaction() {
+        try(DatabaseTransaction txn = testee.openReadTransaction()) {
+            assertException(RuntimeException.class, () -> txn.deleteAll());
+            assertException(RuntimeException.class, () -> txn.deleteSingle(Path.of(1), "key1"));
+            assertException(RuntimeException.class, () -> txn.deleteDescendants(Path.of()));
+            assertException(RuntimeException.class, () -> txn.insertSimple(Path.of(1), "newSimpleKey", "val1"));
+            assertEquals(7, txn.selectAll().count());
+            txn.markCommit();
+        }
+        try(DatabaseTransaction txn = testee.openReadTransaction()) {
+            assertEquals(7, txn.selectAll().count());
         }
     }
 }

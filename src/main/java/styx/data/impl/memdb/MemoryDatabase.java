@@ -4,6 +4,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 import styx.data.db.Database;
 import styx.data.db.DatabaseTransaction;
@@ -13,7 +14,7 @@ class MemoryDatabase implements Database {
 
     private static final ConcurrentMap<String, Database> namedInstances = new ConcurrentHashMap<>();
 
-    private final SortedMap<RowKey, Row> rows = new TreeMap<>();
+    private final AtomicReference<SortedMap<RowKey, Row>> rows = new AtomicReference<>(new TreeMap<>());
 
     private MemoryDatabase() { }
 
@@ -30,11 +31,11 @@ class MemoryDatabase implements Database {
 
     @Override
     public DatabaseTransaction openReadTransaction() {
-        return openWriteTransaction();
+        return new MemoryTransaction(rows, true);
     }
 
     @Override
     public DatabaseTransaction openWriteTransaction() {
-        return new MemoryTransaction(rows);
+        return new MemoryTransaction(rows, false);
     }
 }
